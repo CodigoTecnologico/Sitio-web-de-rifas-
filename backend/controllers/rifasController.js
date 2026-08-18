@@ -55,11 +55,12 @@ exports.create = async (req, res) => {
 
     const rifaId = rifaResult.rows[0].id;
 
-    // Generar boletos con el precio
+    // Generar boletos con el precio y evitar duplicados
     for (let i = 1; i <= total_boletos; i++) {
       await client.query(
         `INSERT INTO boletos (rifa_id, number, status, price)
-         VALUES ($1, $2, 'disponible', $3)`,
+         VALUES ($1, $2, 'disponible', $3)
+         ON CONFLICT (rifa_id, number) DO NOTHING`,
         [rifaId, i, price]
       );
     }

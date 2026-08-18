@@ -129,11 +129,17 @@ async function loadAdminData() {
         ]);
         rifas = rifasData;
         banners = bannersData;
-        allBoletos = [];
+        // Cargar boletos de todas las rifas, evitando duplicados usando un Map
+        const boletosMap = new Map();
         for (const rifa of rifas) {
             const boletosRifa = await apiFetch(`/api/boletos/rifa/${rifa.id}`);
-            allBoletos.push(...boletosRifa);
+            boletosRifa.forEach(b => {
+                if (b.id && !boletosMap.has(b.id)) {
+                    boletosMap.set(b.id, b);
+                }
+            });
         }
+        allBoletos = Array.from(boletosMap.values());
         updateAdminStats();
         renderAdminRifaFilter();
         renderAdminGrid();
@@ -235,7 +241,7 @@ function goBackToRifas() {
     selectedNumbers = [];
     currentRifaId = null;
     updateStats();
-    loadPublicData(); // recargar para actualizar disponibles
+    loadPublicData();
 }
 
 function renderPublicGrid(searchTerm = '') {

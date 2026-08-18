@@ -65,7 +65,6 @@ exports.update = async (req, res) => {
     const { id } = req.params;
     const { status, buyer_name, phone, sale_date, price, contenido } = req.body;
 
-    // Convertir fecha vacía a null
     const safeSaleDate = sale_date && sale_date.trim() !== '' ? sale_date : null;
 
     await pool.query(
