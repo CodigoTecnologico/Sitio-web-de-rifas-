@@ -31,7 +31,6 @@ exports.create = async (req, res) => {
   try {
     const { name, description, price, total_boletos, image_url, badge, date } = req.body;
 
-    // Validaciones básicas
     if (!name || !price || !total_boletos || !date) {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
@@ -48,17 +47,16 @@ exports.create = async (req, res) => {
 
     const rifaId = rifaResult.rows[0].id;
 
-    // Generar boletos para la rifa
+    // Generar boletos con el precio
     for (let i = 1; i <= total_boletos; i++) {
       await client.query(
-        `INSERT INTO boletos (rifa_id, number, status)
-         VALUES ($1, $2, 'disponible')`,
-        [rifaId, i]
+        `INSERT INTO boletos (rifa_id, number, status, price)
+         VALUES ($1, $2, 'disponible', $3)`,
+        [rifaId, i, price]
       );
     }
 
     await client.query('COMMIT');
-
     res.status(201).json(rifaResult.rows[0]);
   } catch (err) {
     await client.query('ROLLBACK');
