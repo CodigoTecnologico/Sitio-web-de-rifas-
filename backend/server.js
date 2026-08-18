@@ -30,3 +30,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
+
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
