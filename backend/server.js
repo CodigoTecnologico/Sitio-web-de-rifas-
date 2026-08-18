@@ -32,7 +32,7 @@ app.get('*', (req, res) => {
 // Endpoint de salud
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
-// Función para inicializar la base de datos (tablas + usuario admin)
+// Función para inicializar la base de datos (tablas + usuario admin + columna price)
 async function initializeDatabase() {
   const createTables = `
     CREATE TABLE IF NOT EXISTS users (
@@ -82,6 +82,10 @@ async function initializeDatabase() {
     await pool.query(createTables);
     console.log('✅ Tablas creadas/verificadas');
 
+    // Añadir columna price a boletos si no existe (para compatibilidad)
+    await pool.query('ALTER TABLE boletos ADD COLUMN IF NOT EXISTS price NUMERIC(10,2)');
+    console.log('✅ Columna price verificada en boletos');
+
     // Crear usuario admin si no existe
     const adminExists = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);
     if (adminExists.rows.length === 0) {
@@ -94,7 +98,7 @@ async function initializeDatabase() {
     }
   } catch (err) {
     console.error('❌ Error al inicializar la base de datos:', err);
-    process.exit(1); // Detener el servicio si no se puede inicializar
+    process.exit(1);
   }
 }
 
