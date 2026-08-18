@@ -27,19 +27,45 @@ exports.getOne = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
+  const client = await pool.connect();
   try {
     const { name, description, price, total_boletos, image_url, badge, date } = req.body;
-    
-    const result = await pool.query(
-      `INSERT INTO rifas (name, description, price, total_boletos, image_url, badge, date) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+
+    // Validaciones básicas
+    if (!name || !price || !total_boletos || !date) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
+    await client.query('BEGIN');
+
+    // Insertar la rifa
+    const rifaResult = await client.query(
+      `INSERT INTO rifas (name, description, price, total_boletos, image_url, badge, date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, name, description, price, total_boletos, image_url, badge, date`,
       [name, description, price, total_boletos, image_url, badge, date]
     );
-    
-    res.status(201).json(result.rows[0]);
+
+    const rifaId = rifaResult.rows[0].id;
+
+    // Generar boletos para la rifa
+    for (let i = 1; i <= total_boletos; i++) {
+      await client.query(
+        `INSERT INTO boletos (rifa_id, number, status)
+         VALUES ($1, $2, 'disponible')`,
+        [rifaId, i]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    res.status(201).json(rifaResult.rows[0]);
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Error al crear rifa:', err);
     res.status(500).json({ error: 'Error al crear rifa' });
+  } finally {
+    client.release();
   }
 };
 
