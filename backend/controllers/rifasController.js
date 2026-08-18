@@ -2,7 +2,18 @@ const pool = require('../utils/db');
 
 exports.getAll = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM rifas ORDER BY date ASC');
+    const result = await pool.query(`
+      SELECT r.*, 
+             COALESCE(b.available_count, 0) AS available_boletos
+      FROM rifas r
+      LEFT JOIN (
+        SELECT rifa_id, COUNT(*) AS available_count
+        FROM boletos
+        WHERE status = 'disponible'
+        GROUP BY rifa_id
+      ) b ON r.id = b.rifa_id
+      ORDER BY r.date ASC
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error('Error al obtener rifas:', err);

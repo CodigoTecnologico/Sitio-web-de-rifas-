@@ -64,13 +64,15 @@ exports.update = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, buyer_name, phone, sale_date, price, contenido } = req.body;
-    
+
+    // Convertir fecha vacía a null
+    const safeSaleDate = sale_date && sale_date.trim() !== '' ? sale_date : null;
+
     await pool.query(
-      `UPDATE boletos SET status=$1, buyer_name=$2, phone=$3, sale_date=$4, 
-       price=$5, contenido=$6 WHERE id=$7`,
-      [status, buyer_name, phone, sale_date, price, contenido, id]
+      `UPDATE boletos SET status=$1, buyer_name=$2, phone=$3, sale_date=$4, price=$5, contenido=$6 WHERE id=$7`,
+      [status, buyer_name, phone, safeSaleDate, price, contenido, id]
     );
-    
+
     res.json({ message: 'Boleto actualizado correctamente' });
   } catch (err) {
     console.error('Error al actualizar boleto:', err);

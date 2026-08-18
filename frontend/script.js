@@ -3,7 +3,7 @@ let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
 let currentRifaId = null;
 let rifas = [];
-let allBoletos = []; // Todos los boletos cargados para admin
+let allBoletos = [];
 let selectedNumbers = [];
 let banners = [];
 let selectedBoletoForEdit = null;
@@ -15,12 +15,10 @@ const PLACEHOLDER_IMAGE = 'data:image/svg+xml;charset=UTF-8,' + encodeURICompone
     '</svg>'
 );
 
-// Función para obtener elementos
 function getElement(id) {
     return document.getElementById(id);
 }
 
-// Función genérica para peticiones API
 async function apiFetch(url, options = {}) {
     const headers = { ...options.headers };
     if (!(options.body instanceof FormData)) {
@@ -131,7 +129,6 @@ async function loadAdminData() {
         ]);
         rifas = rifasData;
         banners = bannersData;
-        // Cargar boletos de todas las rifas
         allBoletos = [];
         for (const rifa of rifas) {
             const boletosRifa = await apiFetch(`/api/boletos/rifa/${rifa.id}`);
@@ -155,6 +152,8 @@ function renderRifasShowcase() {
     rifas.forEach(rifa => {
         const isExpired = new Date(rifa.date) < new Date();
         const total = rifa.total_boletos;
+        const available = rifa.available_boletos || 0;
+
         const card = document.createElement('div');
         card.className = 'rifa-card';
         card.innerHTML = `
@@ -167,7 +166,7 @@ function renderRifasShowcase() {
                 <div class="rifa-price">$${rifa.price} por número</div>
                 <div class="rifa-stats">
                     <div class="rifa-stat">
-                        <div class="rifa-stat-value" id="rifa${rifa.id}Available">0</div>
+                        <div class="rifa-stat-value" id="rifa${rifa.id}Available">${available}</div>
                         <div class="rifa-stat-label">Disponibles</div>
                     </div>
                     <div class="rifa-stat">
@@ -236,6 +235,7 @@ function goBackToRifas() {
     selectedNumbers = [];
     currentRifaId = null;
     updateStats();
+    loadPublicData(); // recargar para actualizar disponibles
 }
 
 function renderPublicGrid(searchTerm = '') {
@@ -369,7 +369,6 @@ async function confirmPurchase() {
         clearCart();
         closeModal('checkoutModal');
         goBackToRifas();
-        await loadPublicData();
     } catch (err) {
         alert(err.message);
     }
@@ -513,11 +512,12 @@ function openEditBoleto(boleto) {
 
 async function saveEdit() {
     if (!selectedBoletoForEdit) return;
+    const saleDate = getElement('editDate').value.trim();
     const data = {
         status: getElement('editStatus').value,
         buyer_name: getElement('editBuyer').value.trim(),
         phone: getElement('editPhone').value.trim(),
-        sale_date: getElement('editDate').value,
+        sale_date: saleDate === '' ? null : saleDate,
         price: parseFloat(getElement('editPrice').value) || 0,
         contenido: getElement('editContent').value.trim()
     };
@@ -537,13 +537,28 @@ async function saveEdit() {
 
 async function quickToggleBoleto(boleto) {
     let newStatus;
-    if (boleto.status === 'disponible') newStatus = 'vendido';
-    else if (boleto.status === 'vendido') newStatus = 'reservado';
-    else newStatus = 'disponible';
+    let saleDate = boleto.sale_date;
+    if (boleto.status === 'disponible') {
+        newStatus = 'vendido';
+        saleDate = new Date().toISOString().split('T')[0];
+    } else if (boleto.status === 'vendido') {
+        newStatus = 'reservado';
+        saleDate = null;
+    } else {
+        newStatus = 'disponible';
+        saleDate = null;
+    }
     try {
         await apiFetch(`/api/boletos/${boleto.id}`, {
             method: 'PUT',
-            body: JSON.stringify({ status: newStatus, buyer_name: boleto.buyer_name, phone: boleto.phone, sale_date: boleto.sale_date, price: boleto.price, contenido: boleto.contenido })
+            body: JSON.stringify({
+                status: newStatus,
+                buyer_name: boleto.buyer_name,
+                phone: boleto.phone,
+                sale_date: saleDate,
+                price: boleto.price,
+                contenido: boleto.contenido
+            })
         });
         await loadAdminData();
     } catch (err) {
@@ -661,7 +676,6 @@ async function saveSingleRifa() {
     }
 }
 
-// Función para eliminar rifa
 async function deleteRifa(id) {
     if (!confirm('¿Estás seguro de eliminar esta rifa? Se borrarán también todos sus boletos.')) {
         return;
