@@ -22,10 +22,7 @@ function getElement(id) {
 
 // Función genérica para peticiones API
 async function apiFetch(url, options = {}) {
-    const headers = {
-        ...options.headers,
-    };
-    // No establecer Content-Type para FormData
+    const headers = { ...options.headers };
     if (!(options.body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
     }
@@ -94,7 +91,7 @@ function switchView(view) {
     const adminView = getElement('adminView');
     const navTab = document.querySelector('.nav-tab');
     const cartSummary = getElement('cartSummary');
-    
+
     if (view === 'public') {
         publicView.classList.add('active');
         adminView.classList.remove('active');
@@ -154,14 +151,10 @@ function renderRifasShowcase() {
     const container = getElement('rifasShowcase');
     if (!container) return;
     container.innerHTML = '';
-    
+
     rifas.forEach(rifa => {
         const isExpired = new Date(rifa.date) < new Date();
         const total = rifa.total_boletos;
-        // Para mostrar disponibles necesitamos boletos, aún no cargados.
-        // Usaremos placeholder 0; se actualizará al seleccionar.
-        const available = 0;
-        
         const card = document.createElement('div');
         card.className = 'rifa-card';
         card.innerHTML = `
@@ -174,7 +167,7 @@ function renderRifasShowcase() {
                 <div class="rifa-price">$${rifa.price} por número</div>
                 <div class="rifa-stats">
                     <div class="rifa-stat">
-                        <div class="rifa-stat-value" id="rifa${rifa.id}Available">${available}</div>
+                        <div class="rifa-stat-value" id="rifa${rifa.id}Available">0</div>
                         <div class="rifa-stat-label">Disponibles</div>
                     </div>
                     <div class="rifa-stat">
@@ -207,7 +200,7 @@ function renderRifasShowcase() {
         `;
         container.appendChild(card);
     });
-    
+
     updateCountdowns();
 }
 
@@ -219,23 +212,21 @@ async function selectRifa(rifaId) {
     }
     currentRifaId = rifaId;
     selectedNumbers = [];
-    
+
     getElement('rifasShowcase').style.display = 'none';
     getElement('numbersSection').style.display = 'block';
     getElement('selectedRifaTitle').textContent = 
         `Selecciona tus Números - ${rifa.name} (Precio: $${rifa.price})`;
-    
-    // Cargar boletos de esta rifa
+
     try {
         const boletos = await apiFetch(`/api/boletos/rifa/${rifaId}`);
-        // Almacenar temporalmente para render
         window.currentBoletos = boletos;
         renderPublicGrid();
         updatePublicStats(boletos);
     } catch (err) {
         alert('Error al cargar boletos');
     }
-    
+
     getElement('numbersSection').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -256,7 +247,7 @@ function renderPublicGrid(searchTerm = '') {
         if (search) return b.number.toString().includes(search);
         return true;
     });
-    
+
     grid.innerHTML = '';
     filtered.forEach(boleto => {
         const cell = document.createElement('div');
@@ -278,14 +269,14 @@ function showNumberDetail(boleto) {
     const actionsDiv = getElement('numberDetailActions');
     const isSelected = selectedNumbers.includes(boleto.number);
     const isAvailable = boleto.status === 'disponible';
-    
+
     infoDiv.innerHTML = `
         <p><strong>Número:</strong> ${boleto.number}</p>
         <p><strong>Precio:</strong> $${boleto.price || rifas.find(r => r.id === boleto.rifa_id)?.price || 0}</p>
         <p><strong>Estado:</strong> ${boleto.status}</p>
         ${boleto.contenido ? `<p><strong>Contenido:</strong> ${boleto.contenido}</p>` : '<p><em>Sin contenido adicional</em></p>'}
     `;
-    
+
     if (isAvailable) {
         if (isSelected) {
             actionsDiv.innerHTML = `
@@ -343,7 +334,7 @@ function showCheckout() {
     const listContainer = getElement('selectedNumbersList');
     listContainer.innerHTML = '<h3>📋 Números seleccionados:</h3>';
     const boletos = window.currentBoletos || [];
-    selectedNumbers.sort((a,b) => a-b).forEach(num => {
+    selectedNumbers.sort((a, b) => a - b).forEach(num => {
         const boleto = boletos.find(b => b.number === num);
         const div = document.createElement('div');
         div.style.cssText = 'display:flex; justify-content:space-between; padding:12px; background:#f0f4ff; margin:8px 0; border-radius:8px;';
@@ -402,9 +393,9 @@ function updateCountdowns() {
     rifas.forEach(rifa => {
         const diff = new Date(rifa.date) - new Date();
         if (diff > 0) {
-            const days = Math.floor(diff / (1000*60*60*24));
-            const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
-            const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const dEl = getElement(`rifa${rifa.id}_days`);
             const hEl = getElement(`rifa${rifa.id}_hours`);
             const mEl = getElement(`rifa${rifa.id}_minutes`);
@@ -442,10 +433,9 @@ function renderAdminGrid(searchTerm = '') {
         }
         return true;
     });
-    
+
     grid.innerHTML = '';
     if (filterRifa === 'all') {
-        // Agrupar por rifa
         const grupos = {};
         boletosFiltrados.forEach(b => {
             if (!grupos[b.rifa_id]) grupos[b.rifa_id] = [];
@@ -580,6 +570,7 @@ function showEditRifas() {
             </div>
             <div class="rifa-edit-actions">
                 <button class="btn btn-info" onclick="editRifa(${rifa.id})">✏️ Editar</button>
+                <button class="btn btn-danger" onclick="deleteRifa(${rifa.id})">🗑️ Eliminar</button>
             </div>
         `;
         container.appendChild(card);
@@ -665,6 +656,21 @@ async function saveSingleRifa() {
         await loadAdminData();
         await loadPublicData();
         alert('✅ Rifa guardada');
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+// Función para eliminar rifa
+async function deleteRifa(id) {
+    if (!confirm('¿Estás seguro de eliminar esta rifa? Se borrarán también todos sus boletos.')) {
+        return;
+    }
+    try {
+        await apiFetch(`/api/rifas/${id}`, { method: 'DELETE' });
+        await loadAdminData();
+        await loadPublicData();
+        alert('✅ Rifa eliminada correctamente');
     } catch (err) {
         alert(err.message);
     }
@@ -815,7 +821,6 @@ async function uploadImage(file) {
 
 // ============ EVENTOS ============
 document.addEventListener('DOMContentLoaded', () => {
-    // Atajo de teclado para login
     window.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.shiftKey && e.key === 'A') {
             e.preventDefault();
@@ -823,26 +828,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Búsquedas
     getElement('publicSearch').addEventListener('input', (e) => renderPublicGrid(e.target.value));
     getElement('adminSearch').addEventListener('input', (e) => renderAdminGrid(e.target.value));
     getElement('adminRifaFilter').addEventListener('change', () => renderAdminGrid());
     
-    // Cerrar modales al hacer clic fuera
     window.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal')) {
             e.target.classList.remove('active');
         }
     });
     
-    // Iniciar
     loadPublicData();
     startCountdown();
     
-    // Verificar sesión previa
     if (authToken) {
         isAdmin = true;
-        // No cambiar vista automáticamente, esperar interacción
     }
 });
 
