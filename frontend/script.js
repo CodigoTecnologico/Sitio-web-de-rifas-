@@ -1,4 +1,8 @@
-// Configuración global
+// =============================================
+// CONFIGURACIÓN
+// =============================================
+const ADMIN_WHATSAPP_NUMBER = '524422556148'; // ⚠️ Cambia por el número del administrador (código de país + número)
+
 let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
 let currentRifaId = null;
@@ -380,12 +384,15 @@ async function confirmPurchase() {
         });
         alert('✅ ¡Números reservados exitosamente!');
 
-        // Abrir WhatsApp con confirmación de reserva
-        const message = `Hola ${clientName}, tu reserva en Lotería Premium ha sido registrada.\n\n` +
-                        `Números reservados: ${selectedNumbers.join(', ')}\n` +
-                        `Total a pagar: $${calcularTotal()}\n\n` +
-                        `Te contactaremos para confirmar el pago. ¡Gracias!`;
-        openWhatsApp(clientPhone, message);
+        // Abrir WhatsApp dirigido al ADMINISTRADOR con los detalles de la reserva
+        const rifaActual = rifas.find(r => r.id === currentRifaId);
+        const mensajeAdmin = `🔔 *Nueva reserva recibida*%0A` +
+            `*Cliente:* ${clientName}%0A` +
+            `*Teléfono:* ${clientPhone}%0A` +
+            `*Rifa:* ${rifaActual?.name || 'N/D'}%0A` +
+            `*Números:* ${selectedNumbers.join(', ')}%0A` +
+            `*Total a pagar:* $${calcularTotal()}`;
+        openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
 
         clearCart();
         closeModal('checkoutModal');
@@ -548,7 +555,6 @@ function openEditBoleto(boleto) {
     
     // Agregar botón de WhatsApp en el modal
     const modalContent = document.querySelector('#editModal .modal-content');
-    // Eliminar botón anterior si existe
     const oldBtn = document.getElementById('whatsappConfirmBtn');
     if (oldBtn) oldBtn.remove();
     
