@@ -297,6 +297,63 @@
         </div>
     </div>
     
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Lotería Premium</h4>
+                <p>Tu oportunidad de ganar grandes premios.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Enlaces legales</h4>
+                <ul>
+                    <li><a href="#" onclick="openTermsModal()">Términos y Condiciones</a></li>
+                    <li><a href="#" onclick="openPrivacyModal()">Política de Privacidad</a></li>
+                    <li><a href="mailto:contacto@loteriapremium.com">Contacto</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Síguenos</h4>
+                <div class="social-icons">
+                    <a href="#" aria-label="Facebook">📘</a>
+                    <a href="#" aria-label="Instagram">📸</a>
+                    <a href="#" aria-label="WhatsApp">💬</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Lotería Premium. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Modales de texto legal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('termsModal')">&times;</span>
+            <h2>📜 Términos y Condiciones</h2>
+            <div class="legal-text">
+                <p>1. Los boletos son personales e intransferibles.</p>
+                <p>2. El pago debe realizarse antes de la fecha del sorteo.</p>
+                <p>3. Los premios no son canjeables por dinero en efectivo.</p>
+                <p>4. La organización se reserva el derecho de modificar las bases.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModal('termsModal')">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('privacyModal')">&times;</span>
+            <h2>🔒 Política de Privacidad</h2>
+            <div class="legal-text">
+                <p>1. Recopilamos datos de contacto solo para la gestión de los boletos.</p>
+                <p>2. No compartimos tu información con terceros.</p>
+                <p>3. Puedes solicitar la eliminación de tus datos en cualquier momento.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModal('privacyModal')">Cerrar</button>
+        </div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

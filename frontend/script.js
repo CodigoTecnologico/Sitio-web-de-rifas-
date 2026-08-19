@@ -129,7 +129,6 @@ async function loadAdminData() {
         ]);
         rifas = rifasData;
         banners = bannersData;
-        // Cargar boletos de todas las rifas, evitando duplicados usando un Map
         const boletosMap = new Map();
         for (const rifa of rifas) {
             const boletosRifa = await apiFetch(`/api/boletos/rifa/${rifa.id}`);
@@ -661,9 +660,15 @@ async function saveSingleRifa() {
     let image_url = null;
     const fileInput = getElement('editRifaImage');
     if (fileInput.files.length > 0) {
-        image_url = await uploadImage(fileInput.files[0]);
+        const file = fileInput.files[0];
+        image_url = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     } else if (id) {
-        image_url = rifas.find(r => r.id == id)?.image_url;
+        image_url = rifas.find(r => r.id == id)?.image_url || null;
     }
     
     const data = { name, description, price, total_boletos: total, image_url, badge, date };
@@ -676,7 +681,7 @@ async function saveSingleRifa() {
         closeModal('editSingleRifaModal');
         await loadAdminData();
         await loadPublicData();
-        alert('✅ Rifa guardada');
+        alert('✅ Rifa guardada correctamente');
     } catch (err) {
         alert(err.message);
     }
@@ -744,7 +749,11 @@ async function addBanner() {
         alert('Selecciona una imagen');
         return;
     }
-    const image_url = await uploadImage(fileInput.files[0]);
+    const image_url = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(fileInput.files[0]);
+    });
     try {
         await apiFetch('/api/banners', {
             method: 'POST',
@@ -822,21 +831,13 @@ function showReport() {
     getElement('reportModal').classList.add('active');
 }
 
-// ============ SUBIDA DE IMAGEN A R2 ============
-async function uploadImage(file) {
-    const formData = new FormData();
-    formData.append('image', file);
-    const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${authToken}` },
-        body: formData
-    });
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Error al subir imagen');
-    }
-    const data = await response.json();
-    return data.url;
+// ============ FUNCIONES DE MODALES LEGALES ============
+function openTermsModal() {
+    getElement('termsModal').classList.add('active');
+}
+
+function openPrivacyModal() {
+    getElement('privacyModal').classList.add('active');
 }
 
 // ============ EVENTOS ============
