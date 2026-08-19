@@ -352,6 +352,14 @@ function showCheckout() {
     getElement('checkoutModal').classList.add('active');
 }
 
+function calcularTotal() {
+    const boletos = window.currentBoletos || [];
+    return selectedNumbers.reduce((sum, num) => {
+        const boleto = boletos.find(b => b.number === num);
+        return sum + (boleto?.price || 0);
+    }, 0);
+}
+
 async function confirmPurchase() {
     const clientName = getElement('clientName').value.trim();
     const clientPhone = getElement('clientPhone').value.trim();
@@ -371,6 +379,14 @@ async function confirmPurchase() {
             })
         });
         alert('✅ ¡Números reservados exitosamente!');
+
+        // Abrir WhatsApp con confirmación de reserva
+        const message = `Hola ${clientName}, tu reserva en Lotería Premium ha sido registrada.\n\n` +
+                        `Números reservados: ${selectedNumbers.join(', ')}\n` +
+                        `Total a pagar: $${calcularTotal()}\n\n` +
+                        `Te contactaremos para confirmar el pago. ¡Gracias!`;
+        openWhatsApp(clientPhone, message);
+
         clearCart();
         closeModal('checkoutModal');
         goBackToRifas();
@@ -386,6 +402,22 @@ function clearCart() {
     getElement('clientName').value = '';
     getElement('clientPhone').value = '';
     getElement('clientEmail').value = '';
+}
+
+// ============ WHATSAPP ============
+function openWhatsApp(phone, message) {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+}
+
+function sendPaymentConfirmation(phone, number, rifaName) {
+    if (!phone) {
+        alert('No hay teléfono del comprador');
+        return;
+    }
+    const message = `Hola, te confirmamos que el pago del boleto número ${number} de la rifa "${rifaName}" ha sido recibido. ¡Tu participación está asegurada! 🎉`;
+    openWhatsApp(phone, message);
 }
 
 // ============ CONTADOR ============
@@ -504,7 +536,8 @@ function setText(id, value) {
 // ============ ADMIN: EDITAR BOLETO ============
 function openEditBoleto(boleto) {
     selectedBoletoForEdit = boleto;
-    getElement('modalTitle').textContent = `Editar Número ${boleto.number} - ${rifas.find(r => r.id == boleto.rifa_id)?.name || ''}`;
+    const rifaName = rifas.find(r => r.id == boleto.rifa_id)?.name || '';
+    getElement('modalTitle').textContent = `Editar Número ${boleto.number} - ${rifaName}`;
     getElement('editNumber').value = boleto.number;
     getElement('editStatus').value = boleto.status;
     getElement('editBuyer').value = boleto.buyer_name || '';
@@ -512,6 +545,20 @@ function openEditBoleto(boleto) {
     getElement('editDate').value = boleto.sale_date || '';
     getElement('editPrice').value = boleto.price || '';
     getElement('editContent').value = boleto.contenido || '';
+    
+    // Agregar botón de WhatsApp en el modal
+    const modalContent = document.querySelector('#editModal .modal-content');
+    // Eliminar botón anterior si existe
+    const oldBtn = document.getElementById('whatsappConfirmBtn');
+    if (oldBtn) oldBtn.remove();
+    
+    const whatsappBtn = document.createElement('button');
+    whatsappBtn.id = 'whatsappConfirmBtn';
+    whatsappBtn.className = 'btn btn-success btn-block';
+    whatsappBtn.textContent = '📲 Enviar confirmación de pago por WhatsApp';
+    whatsappBtn.onclick = () => sendPaymentConfirmation(boleto.phone, boleto.number, rifaName);
+    modalContent.appendChild(whatsappBtn);
+    
     getElement('editModal').classList.add('active');
 }
 
@@ -812,7 +859,7 @@ function showReport() {
     tbody.innerHTML = '';
     const vendidos = allBoletos.filter(b => b.status !== 'disponible');
     if (vendidos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">No hay números vendidos o reservados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">No hay números vendidos o reservados</td></tr>';
     } else {
         vendidos.forEach(b => {
             const row = document.createElement('tr');
@@ -824,6 +871,7 @@ function showReport() {
                 <td>$${b.price || 0}</td>
                 <td>${b.status === 'vendido' ? '✅ Vendido' : '⏳ Reservado'}</td>
                 <td>${b.contenido || '—'}</td>
+                <td>${b.phone ? `<button class="btn btn-info" onclick="openWhatsApp('${b.phone}', 'Hola ${b.buyer_name}, tu boleto ${b.number} está ${b.status}.')">💬</button>` : '—'}</td>
             `;
             tbody.appendChild(row);
         });
