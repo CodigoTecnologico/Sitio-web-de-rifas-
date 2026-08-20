@@ -358,11 +358,15 @@ function showCheckout() {
 
 function calcularTotal() {
     const boletos = window.currentBoletos || [];
-    return selectedNumbers.reduce((sum, num) => {
+    let total = 0;
+    selectedNumbers.forEach(num => {
         const boleto = boletos.find(b => b.number === num);
-        const price = parseFloat(boleto?.price) || 0;
-        return sum + price;
-    }, 0);
+        const price = Number(boleto?.price);
+        if (!isNaN(price)) {
+            total += price;
+        }
+    });
+    return total;
 }
 
 async function confirmPurchase() {
@@ -385,14 +389,15 @@ async function confirmPurchase() {
         });
         alert('✅ ¡Números reservados exitosamente!');
 
-        // Abrir WhatsApp dirigido al ADMINISTRADOR con los detalles de la reserva
+        // Construir mensaje SIN %0A manual
         const rifaActual = rifas.find(r => r.id === currentRifaId);
-        const mensajeAdmin = `🔔 *Nueva reserva recibida*\n` +
-            `*Cliente:* ${clientName}\n` +
-            `*Teléfono:* ${clientPhone}\n` +
-            `*Rifa:* ${rifaActual?.name || 'N/D'}\n` +
-            `*Números:* ${selectedNumbers.join(', ')}\n` +
-            `*Total a pagar:* $${calcularTotal()}`;
+        const mensajeAdmin = `🔔 *Nueva reserva recibida*
+*Cliente:* ${clientName}
+*Teléfono:* ${clientPhone}
+*Rifa:* ${rifaActual?.name || 'N/D'}
+*Números:* ${selectedNumbers.join(', ')}
+*Total a pagar:* $${calcularTotal()}`;
+
         openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
 
         clearCart();
