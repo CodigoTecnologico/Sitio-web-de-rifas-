@@ -361,12 +361,14 @@ function calcularTotal() {
     let total = 0;
     selectedNumbers.forEach(num => {
         const boleto = boletos.find(b => b.number === num);
-        const price = Number(boleto?.price);
-        if (!isNaN(price)) {
-            total += price;
+        if (boleto) {
+            const price = Number(boleto.price);
+            if (!isNaN(price)) {
+                total += price;
+            }
         }
     });
-    return total;
+    return total.toFixed(2); // devuelve "15.00", no "015.00"
 }
 
 async function confirmPurchase() {
@@ -389,14 +391,16 @@ async function confirmPurchase() {
         });
         alert('✅ ¡Números reservados exitosamente!');
 
-        // Construir mensaje SIN %0A manual
+        // Construir mensaje con saltos de línea reales
         const rifaActual = rifas.find(r => r.id === currentRifaId);
-        const mensajeAdmin = `🔔 *Nueva reserva recibida*
-*Cliente:* ${clientName}
-*Teléfono:* ${clientPhone}
-*Rifa:* ${rifaActual?.name || 'N/D'}
-*Números:* ${selectedNumbers.join(', ')}
-*Total a pagar:* $${calcularTotal()}`;
+        const mensajeAdmin = [
+            '🔔 *Nueva reserva recibida*',
+            `*Cliente:* ${clientName}`,
+            `*Teléfono:* ${clientPhone}`,
+            `*Rifa:* ${rifaActual?.name || 'N/D'}`,
+            `*Números:* ${selectedNumbers.join(', ')}`,
+            `*Total a pagar:* $${calcularTotal()}`
+        ].join('\n');
 
         openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
 
@@ -419,7 +423,7 @@ function clearCart() {
 
 // ============ WHATSAPP ============
 function openWhatsApp(phone, message) {
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = String(phone).replace(/\D/g, '');
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
 }
@@ -538,7 +542,7 @@ function updateAdminStats() {
     setText('availableCount', disponibles);
     setText('soldCount', vendidos);
     setText('reservedCount', reservados);
-    setText('totalRevenue', '$' + revenue);
+    setText('totalRevenue', '$' + revenue.toFixed(2));
 }
 
 function setText(id, value) {
