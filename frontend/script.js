@@ -360,7 +360,8 @@ function calcularTotal() {
     const boletos = window.currentBoletos || [];
     return selectedNumbers.reduce((sum, num) => {
         const boleto = boletos.find(b => b.number === num);
-        return sum + (boleto?.price || 0);
+        const price = parseFloat(boleto?.price) || 0;
+        return sum + price;
     }, 0);
 }
 
@@ -386,11 +387,11 @@ async function confirmPurchase() {
 
         // Abrir WhatsApp dirigido al ADMINISTRADOR con los detalles de la reserva
         const rifaActual = rifas.find(r => r.id === currentRifaId);
-        const mensajeAdmin = `🔔 *Nueva reserva recibida*%0A` +
-            `*Cliente:* ${clientName}%0A` +
-            `*Teléfono:* ${clientPhone}%0A` +
-            `*Rifa:* ${rifaActual?.name || 'N/D'}%0A` +
-            `*Números:* ${selectedNumbers.join(', ')}%0A` +
+        const mensajeAdmin = `🔔 *Nueva reserva recibida*\n` +
+            `*Cliente:* ${clientName}\n` +
+            `*Teléfono:* ${clientPhone}\n` +
+            `*Rifa:* ${rifaActual?.name || 'N/D'}\n` +
+            `*Números:* ${selectedNumbers.join(', ')}\n` +
             `*Total a pagar:* $${calcularTotal()}`;
         openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
 
@@ -553,7 +554,6 @@ function openEditBoleto(boleto) {
     getElement('editPrice').value = boleto.price || '';
     getElement('editContent').value = boleto.contenido || '';
     
-    // Agregar botón de WhatsApp en el modal
     const modalContent = document.querySelector('#editModal .modal-content');
     const oldBtn = document.getElementById('whatsappConfirmBtn');
     if (oldBtn) oldBtn.remove();
