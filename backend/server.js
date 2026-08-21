@@ -14,6 +14,8 @@ const auth = require('./middleware/auth');
 const { uploadImage } = require('./utils/cloudinary');
 
 const app = express();
+app.set('trust proxy', 1); // Necesario para Render y express-rate-limit
+
 const PORT = process.env.PORT || 3000;
 
 // Configuración de multer para manejar archivos en memoria
