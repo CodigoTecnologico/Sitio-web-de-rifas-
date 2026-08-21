@@ -1,7 +1,7 @@
 // =============================================
 // CONFIGURACIÓN
 // =============================================
-const ADMIN_WHATSAPP_NUMBER = '521XXXXXXXXX'; // ⚠️ Cambia por el número del administrador (código de país + número)
+const ADMIN_WHATSAPP_NUMBER = '523331729781'; // ⚠️ Cambia por el número del administrador (código de país + número)
 
 let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
@@ -62,7 +62,7 @@ async function loginAdmin() {
             isAdmin = true;
             closeLogin();
             switchView('admin');
-            await loadAdminData();
+            await refreshAdminUI();
         } else {
             alert(data.error || 'Credenciales inválidas');
         }
@@ -105,7 +105,7 @@ function switchView(view) {
         adminView.classList.add('active');
         navTab?.classList.remove('active');
         if (cartSummary) cartSummary.style.display = 'none';
-        loadAdminData();
+        refreshAdminUI();
     }
 }
 
@@ -150,6 +150,15 @@ async function loadAdminData() {
     } catch (err) {
         console.error('Error cargando datos admin:', err);
     }
+}
+
+// Nueva función para refrescar toda la interfaz del admin
+async function refreshAdminUI() {
+    await loadAdminData();
+    renderAdminRifaFilter();
+    renderAdminGrid();
+    renderRifasShowcase(); // actualiza también la vista pública
+    updateBannerDisplay();
 }
 
 // ============ RENDER PÚBLICO ============
@@ -594,7 +603,7 @@ async function saveEdit() {
         });
         closeModal('editModal');
         selectedBoletoForEdit = null;
-        await loadAdminData();
+        await refreshAdminUI();
         alert('✅ Boleto actualizado');
     } catch (err) {
         alert(err.message);
@@ -626,7 +635,7 @@ async function quickToggleBoleto(boleto) {
                 contenido: boleto.contenido
             })
         });
-        await loadAdminData();
+        await refreshAdminUI();
     } catch (err) {
         alert(err.message);
     }
@@ -634,6 +643,11 @@ async function quickToggleBoleto(boleto) {
 
 // ============ ADMIN: RIFAS (CRUD) ============
 function showEditRifas() {
+    renderRifasEditList();
+    getElement('editRifasModal').classList.add('active');
+}
+
+function renderRifasEditList() {
     const container = getElement('rifasEditList');
     container.innerHTML = '';
     rifas.forEach(rifa => {
@@ -656,7 +670,6 @@ function showEditRifas() {
         `;
         container.appendChild(card);
     });
-    getElement('editRifasModal').classList.add('active');
 }
 
 function showCreateRifa() {
@@ -750,7 +763,7 @@ async function saveSingleRifa() {
             await apiFetch('/api/rifas', { method: 'POST', body: JSON.stringify(data) });
         }
         closeModal('editSingleRifaModal');
-        await loadAdminData();
+        await refreshAdminUI();
         await loadPublicData();
         alert('✅ Rifa guardada correctamente');
     } catch (err) {
@@ -764,7 +777,8 @@ async function deleteRifa(id) {
     }
     try {
         await apiFetch(`/api/rifas/${id}`, { method: 'DELETE' });
-        await loadAdminData();
+        closeModal('editRifasModal');
+        await refreshAdminUI();
         await loadPublicData();
         alert('✅ Rifa eliminada correctamente');
     } catch (err) {
@@ -834,7 +848,8 @@ async function addBanner() {
         getElement('bannerImage').value = '';
         getElement('bannerPreview').style.display = 'none';
 
-        await loadAdminData();
+        closeModal('bannerModal');
+        await refreshAdminUI();
         alert('✅ Banner agregado');
     } catch (err) {
         alert(err.message);
@@ -849,7 +864,8 @@ async function toggleBanner(id) {
             method: 'PUT',
             body: JSON.stringify({ ...banner, active: !banner.active })
         });
-        await loadAdminData();
+        closeModal('bannerModal');
+        await refreshAdminUI();
     } catch (err) {
         alert(err.message);
     }
@@ -859,7 +875,8 @@ async function deleteBanner(id) {
     if (confirm('¿Eliminar banner?')) {
         try {
             await apiFetch(`/api/banners/${id}`, { method: 'DELETE' });
-            await loadAdminData();
+            closeModal('bannerModal');
+            await refreshAdminUI();
         } catch (err) {
             alert(err.message);
         }
