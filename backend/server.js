@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const rifasRoutes = require('./routes/rifas');
 const boletosRoutes = require('./routes/boletos');
@@ -18,22 +19,54 @@ const PORT = process.env.PORT || 3000;
 // Configuración de multer para manejar archivos en memoria
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.use(cors());
+// ========== CORS RESTRINGIDO ==========
+const allowedOrigins = [
+  'https://loteria-backend-4afe.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  }
+}));
+
 app.use(express.json({ limit: '10mb' }));
 
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+// ========== RATE LIMITING ==========
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { error: 'Demasiadas solicitudes, intenta de nuevo más tarde' }
+});
+app.use('/api/', generalLimiter);
 
-// Rutas API
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Demasiados intentos de inicio de sesión, espera 15 minutos' }
+});
+app.use('/api/auth/login', loginLimiter);
+
+const reserveLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { error: 'Demasiadas reservas, intenta de nuevo en un minuto' }
+});
+app.use('/api/boletos/reserve', reserveLimiter);
+
+// ========== RUTAS ==========
 app.use('/api/auth', authRoutes);
 app.use('/api/rifas', rifasRoutes);
 app.use('/api/boletos', boletosRoutes);
 app.use('/api/banners', bannersRoutes);
-
-// Ruta principal
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
 
 // Endpoint de salud
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
@@ -52,7 +85,28 @@ app.post('/api/upload', auth, upload.single('image'), async (req, res) => {
   }
 });
 
-// Función para inicializar la base de datos (tablas + usuario admin + columna price)
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Ruta principal
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
+// ========== MANEJO DE ERRORES ==========
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Error general:', err);
+  if (err.message === 'No permitido por CORS') {
+    return res.status(403).json({ error: 'Origen no permitido' });
+  }
+  res.status(500).json({ error: 'Error interno del servidor' });
+});
+
+// ========== INICIALIZACIÓN DE BASE DE DATOS ==========
 async function initializeDatabase() {
   const createTables = `
     CREATE TABLE IF NOT EXISTS users (
@@ -121,7 +175,6 @@ async function initializeDatabase() {
   }
 }
 
-// Inicializar base de datos y luego escuchar
 initializeDatabase()
   .then(() => {
     app.listen(PORT, () => {

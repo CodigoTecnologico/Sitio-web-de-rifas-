@@ -1,7 +1,7 @@
 // =============================================
 // CONFIGURACIÓN
 // =============================================
-const ADMIN_WHATSAPP_NUMBER = '523331729781'; // ⚠️ Cambia por el número del administrador (código de país + número)
+const ADMIN_WHATSAPP_NUMBER = '521XXXXXXXXX'; // ⚠️ Cambia por el número del administrador
 
 let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
@@ -21,6 +21,24 @@ const PLACEHOLDER_IMAGE = 'data:image/svg+xml;charset=UTF-8,' + encodeURICompone
 
 function getElement(id) {
     return document.getElementById(id);
+}
+
+function showToast(message, type = 'info') {
+    const container = getElement('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 4000);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 async function apiFetch(url, options = {}) {
@@ -64,10 +82,10 @@ async function loginAdmin() {
             switchView('admin');
             await refreshAdminUI();
         } else {
-            alert(data.error || 'Credenciales inválidas');
+            showToast(data.error || 'Credenciales inválidas', 'error');
         }
     } catch (err) {
-        alert('Error de conexión');
+        showToast('Error de conexión', 'error');
     }
 }
 
@@ -152,12 +170,11 @@ async function loadAdminData() {
     }
 }
 
-// Nueva función para refrescar toda la interfaz del admin
 async function refreshAdminUI() {
     await loadAdminData();
     renderAdminRifaFilter();
     renderAdminGrid();
-    renderRifasShowcase(); // actualiza también la vista pública
+    renderRifasShowcase();
     updateBannerDisplay();
 }
 
@@ -224,7 +241,7 @@ function renderRifasShowcase() {
 async function selectRifa(rifaId) {
     const rifa = rifas.find(r => r.id === rifaId);
     if (!rifa || new Date(rifa.date) < new Date()) {
-        alert('⚠️ Esta rifa ha finalizado');
+        showToast('⚠️ Esta rifa ha finalizado', 'warning');
         return;
     }
     currentRifaId = rifaId;
@@ -241,7 +258,7 @@ async function selectRifa(rifaId) {
         renderPublicGrid();
         updatePublicStats(boletos);
     } catch (err) {
-        alert('Error al cargar boletos');
+        showToast('Error al cargar boletos', 'error');
     }
 
     getElement('numbersSection').scrollIntoView({ behavior: 'smooth' });
@@ -288,11 +305,17 @@ function showNumberDetail(boleto) {
     const isSelected = selectedNumbers.includes(boleto.number);
     const isAvailable = boleto.status === 'disponible';
 
+    // Construir HTML seguro
+    let contenidoHtml = '<p><em>Sin contenido adicional</em></p>';
+    if (boleto.contenido) {
+        contenidoHtml = `<p><strong>Contenido:</strong> ${escapeHtml(boleto.contenido)}</p>`;
+    }
+
     infoDiv.innerHTML = `
         <p><strong>Número:</strong> ${boleto.number}</p>
         <p><strong>Precio:</strong> $${boleto.price || rifas.find(r => r.id === boleto.rifa_id)?.price || 0}</p>
         <p><strong>Estado:</strong> ${boleto.status}</p>
-        ${boleto.contenido ? `<p><strong>Contenido:</strong> ${boleto.contenido}</p>` : '<p><em>Sin contenido adicional</em></p>'}
+        ${contenidoHtml}
     `;
 
     if (isAvailable) {
@@ -346,7 +369,7 @@ function updateStats() {
 // ============ CHECKOUT ============
 function showCheckout() {
     if (selectedNumbers.length === 0) {
-        alert('⚠️ No has seleccionado ningún número');
+        showToast('⚠️ No has seleccionado ningún número', 'warning');
         return;
     }
     const listContainer = getElement('selectedNumbersList');
@@ -356,8 +379,9 @@ function showCheckout() {
         const boleto = boletos.find(b => b.number === num);
         const div = document.createElement('div');
         div.style.cssText = 'display:flex; justify-content:space-between; padding:12px; background:#f0f4ff; margin:8px 0; border-radius:8px;';
+        const contenidoSeguro = boleto?.contenido ? escapeHtml(boleto.contenido) : '';
         div.innerHTML = `
-            <span>Número: <strong>${num}</strong>${boleto?.contenido ? ` - <em>${boleto.contenido}</em>` : ''}</span>
+            <span>Número: <strong>${num}</strong>${contenidoSeguro ? ` - <em>${contenidoSeguro}</em>` : ''}</span>
             <span>Precio: <strong>$${boleto?.price || 0}</strong></span>
         `;
         listContainer.appendChild(div);
@@ -384,9 +408,22 @@ async function confirmPurchase() {
     const clientName = getElement('clientName').value.trim();
     const clientPhone = getElement('clientPhone').value.trim();
     if (!clientName || !clientPhone) {
-        alert('⚠️ Por favor ingresa nombre y teléfono');
+        showToast('⚠️ Por favor ingresa nombre y teléfono', 'warning');
         return;
     }
+
+    // Abrir WhatsApp inmediatamente
+    const rifaActual = rifas.find(r => r.id === currentRifaId);
+    const mensajeAdmin = [
+        '🔔 *Nueva reserva recibida*',
+        `*Cliente:* ${clientName}`,
+        `*Teléfono:* ${clientPhone}`,
+        `*Rifa:* ${rifaActual?.name || 'N/D'}`,
+        `*Números:* ${selectedNumbers.join(', ')}`,
+        `*Total a pagar:* $${calcularTotal()}`
+    ].join('\n');
+    openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
+
     try {
         await apiFetch('/api/boletos/reserve', {
             method: 'POST',
@@ -398,25 +435,13 @@ async function confirmPurchase() {
                 email: getElement('clientEmail').value.trim()
             })
         });
-        alert('✅ ¡Números reservados exitosamente!');
 
-        const rifaActual = rifas.find(r => r.id === currentRifaId);
-        const mensajeAdmin = [
-            '🔔 *Nueva reserva recibida*',
-            `*Cliente:* ${clientName}`,
-            `*Teléfono:* ${clientPhone}`,
-            `*Rifa:* ${rifaActual?.name || 'N/D'}`,
-            `*Números:* ${selectedNumbers.join(', ')}`,
-            `*Total a pagar:* $${calcularTotal()}`
-        ].join('\n');
-
-        openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
-
+        showToast('✅ ¡Números reservados exitosamente!', 'success');
         clearCart();
         closeModal('checkoutModal');
         goBackToRifas();
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     }
 }
 
@@ -438,7 +463,7 @@ function openWhatsApp(phone, message) {
 
 function sendPaymentConfirmation(phone, number, rifaName) {
     if (!phone) {
-        alert('No hay teléfono del comprador');
+        showToast('No hay teléfono del comprador', 'warning');
         return;
     }
     const message = `Hola, te confirmamos que el pago del boleto número ${number} de la rifa "${rifaName}" ha sido recibido. ¡Tu participación está asegurada! 🎉`;
@@ -604,9 +629,9 @@ async function saveEdit() {
         closeModal('editModal');
         selectedBoletoForEdit = null;
         await refreshAdminUI();
-        alert('✅ Boleto actualizado');
+        showToast('✅ Boleto actualizado', 'success');
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     }
 }
 
@@ -637,7 +662,7 @@ async function quickToggleBoleto(boleto) {
         });
         await refreshAdminUI();
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     }
 }
 
@@ -739,11 +764,11 @@ async function saveSingleRifa() {
     const price = parseFloat(getElement('editRifaPrice').value);
     
     if (!name || !date || !total || !price) {
-        alert('Por favor completa todos los campos');
+        showToast('Por favor completa todos los campos', 'warning');
         return;
     }
     if (new Date(date) <= new Date()) {
-        alert('La fecha debe ser futura');
+        showToast('La fecha debe ser futura', 'warning');
         return;
     }
     
@@ -765,9 +790,9 @@ async function saveSingleRifa() {
         closeModal('editSingleRifaModal');
         await refreshAdminUI();
         await loadPublicData();
-        alert('✅ Rifa guardada correctamente');
+        showToast('✅ Rifa guardada correctamente', 'success');
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     }
 }
 
@@ -780,9 +805,9 @@ async function deleteRifa(id) {
         closeModal('editRifasModal');
         await refreshAdminUI();
         await loadPublicData();
-        alert('✅ Rifa eliminada correctamente');
+        showToast('✅ Rifa eliminada correctamente', 'success');
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     }
 }
 
@@ -831,7 +856,7 @@ async function addBanner() {
     const fileInput = getElement('bannerImage');
     const link = getElement('bannerLink').value.trim();
     if (!fileInput.files[0]) {
-        alert('Selecciona una imagen');
+        showToast('Selecciona una imagen', 'warning');
         return;
     }
 
@@ -850,9 +875,9 @@ async function addBanner() {
 
         closeModal('bannerModal');
         await refreshAdminUI();
-        alert('✅ Banner agregado');
+        showToast('✅ Banner agregado', 'success');
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     }
 }
 
@@ -867,7 +892,7 @@ async function toggleBanner(id) {
         closeModal('bannerModal');
         await refreshAdminUI();
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     }
 }
 
@@ -878,7 +903,7 @@ async function deleteBanner(id) {
             closeModal('bannerModal');
             await refreshAdminUI();
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, 'error');
         }
     }
 }
@@ -911,7 +936,7 @@ function showReport() {
                 <td>${b.sale_date || b.reservation_date || 'N/A'}</td>
                 <td>$${b.price || 0}</td>
                 <td>${b.status === 'vendido' ? '✅ Vendido' : '⏳ Reservado'}</td>
-                <td>${b.contenido || '—'}</td>
+                <td>${b.contenido ? escapeHtml(b.contenido) : '—'}</td>
                 <td>${b.phone ? `<button class="btn btn-info" onclick="openWhatsApp('${b.phone}', 'Hola ${b.buyer_name}, tu boleto ${b.number} está ${b.status}.')">💬</button>` : '—'}</td>
             `;
             tbody.appendChild(row);
