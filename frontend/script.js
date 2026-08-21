@@ -1,7 +1,7 @@
 // =============================================
 // CONFIGURACIÓN
 // =============================================
-const ADMIN_WHATSAPP_NUMBER = '521XXXXXXXXX'; // ⚠️ Cambia por el número del administrador
+const ADMIN_WHATSAPP_NUMBER = '524422556148'; // ⚠️ Cambia por el número del administrador
 
 let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
