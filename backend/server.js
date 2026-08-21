@@ -2,15 +2,21 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 const authRoutes = require('./routes/auth');
 const rifasRoutes = require('./routes/rifas');
 const boletosRoutes = require('./routes/boletos');
 const bannersRoutes = require('./routes/banners');
 const pool = require('./utils/db');
 const bcrypt = require('bcrypt');
+const auth = require('./middleware/auth');
+const { uploadImage } = require('./utils/cloudinary');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configuración de multer para manejar archivos en memoria
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -31,6 +37,20 @@ app.get('*', (req, res) => {
 
 // Endpoint de salud
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
+
+// Endpoint de subida de imagen a Cloudinary
+app.post('/api/upload', auth, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió ninguna imagen' });
+    }
+    const imageUrl = await uploadImage(req.file.buffer);
+    res.json({ url: imageUrl });
+  } catch (err) {
+    console.error('Error al subir imagen a Cloudinary:', err);
+    res.status(500).json({ error: 'Error al subir imagen' });
+  }
+});
 
 // Función para inicializar la base de datos (tablas + usuario admin + columna price)
 async function initializeDatabase() {
@@ -65,6 +85,7 @@ async function initializeDatabase() {
       sale_date DATE,
       reservation_date DATE,
       contenido TEXT,
+      price NUMERIC(10,2),
       UNIQUE(rifa_id, number)
     );
 
@@ -82,11 +103,9 @@ async function initializeDatabase() {
     await pool.query(createTables);
     console.log('✅ Tablas creadas/verificadas');
 
-    // Añadir columna price a boletos si no existe (para compatibilidad)
     await pool.query('ALTER TABLE boletos ADD COLUMN IF NOT EXISTS price NUMERIC(10,2)');
     console.log('✅ Columna price verificada en boletos');
 
-    // Crear usuario admin si no existe
     const adminExists = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);
     if (adminExists.rows.length === 0) {
       const passwordHash = await bcrypt.hash('admin123', 10);

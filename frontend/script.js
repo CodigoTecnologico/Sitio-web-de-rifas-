@@ -1,7 +1,7 @@
 // =============================================
 // CONFIGURACIÓN
 // =============================================
-const ADMIN_WHATSAPP_NUMBER = '524422556148'; // ⚠️ Cambia por el número del administrador (código de país + número)
+const ADMIN_WHATSAPP_NUMBER = '521XXXXXXXXX'; // ⚠️ Cambia por el número del administrador (código de país + número)
 
 let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
@@ -368,7 +368,7 @@ function calcularTotal() {
             }
         }
     });
-    return total.toFixed(2); // devuelve "15.00", no "015.00"
+    return total.toFixed(2);
 }
 
 async function confirmPurchase() {
@@ -391,7 +391,6 @@ async function confirmPurchase() {
         });
         alert('✅ ¡Números reservados exitosamente!');
 
-        // Construir mensaje con saltos de línea reales
         const rifaActual = rifas.find(r => r.id === currentRifaId);
         const mensajeAdmin = [
             '🔔 *Nueva reserva recibida*',
@@ -701,6 +700,22 @@ function previewRifaImage() {
     }
 }
 
+async function uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}` },
+        body: formData
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Error al subir imagen');
+    }
+    const data = await response.json();
+    return data.url;
+}
+
 async function saveSingleRifa() {
     const id = getElement('editRifaId').value;
     const name = getElement('editRifaName').value.trim();
@@ -722,13 +737,7 @@ async function saveSingleRifa() {
     let image_url = null;
     const fileInput = getElement('editRifaImage');
     if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        image_url = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
+        image_url = await uploadImage(fileInput.files[0]);
     } else if (id) {
         image_url = rifas.find(r => r.id == id)?.image_url || null;
     }
@@ -811,20 +820,20 @@ async function addBanner() {
         alert('Selecciona una imagen');
         return;
     }
-    const image_url = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.readAsDataURL(fileInput.files[0]);
-    });
+
     try {
+        const image_url = await uploadImage(fileInput.files[0]);
+
         await apiFetch('/api/banners', {
             method: 'POST',
             body: JSON.stringify({ title, image_url, link, active: true })
         });
+
         getElement('bannerTitle').value = '';
         getElement('bannerLink').value = '';
         getElement('bannerImage').value = '';
         getElement('bannerPreview').style.display = 'none';
+
         await loadAdminData();
         alert('✅ Banner agregado');
     } catch (err) {
