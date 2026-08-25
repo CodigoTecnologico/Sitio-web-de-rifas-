@@ -424,16 +424,17 @@ async function confirmPurchase() {
     openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
 
     try {
-        const emailValue = getElement('clientEmail').value.trim();
+        // Construir objeto sin email
+        const payload = {
+            rifaId: currentRifaId,
+            numbers: selectedNumbers,
+            name: clientName,
+            phone: clientPhone
+        };
+
         await apiFetch('/api/boletos/reserve', {
             method: 'POST',
-            body: JSON.stringify({
-                rifaId: currentRifaId,
-                numbers: selectedNumbers,
-                name: clientName,
-                phone: clientPhone,
-                email: emailValue || null   // <-- Corrección: enviar null si está vacío
-            })
+            body: JSON.stringify(payload)
         });
 
         showToast('✅ ¡Números reservados exitosamente!', 'success');
@@ -451,7 +452,6 @@ function clearCart() {
     renderPublicGrid(getElement('publicSearch').value);
     getElement('clientName').value = '';
     getElement('clientPhone').value = '';
-    getElement('clientEmail').value = '';
 }
 
 // ============ WHATSAPP ============

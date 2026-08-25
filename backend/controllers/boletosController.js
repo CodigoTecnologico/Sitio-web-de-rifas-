@@ -15,7 +15,7 @@ exports.getByRifa = async (req, res) => {
 };
 
 exports.reserve = async (req, res) => {
-  const { rifaId, numbers, name, phone, email } = req.body;
+  const { rifaId, numbers, name, phone } = req.body;
   
   if (!rifaId || !numbers || numbers.length === 0 || !name || !phone) {
     return res.status(400).json({ error: 'Datos incompletos' });
@@ -44,8 +44,8 @@ exports.reserve = async (req, res) => {
       
       await client.query(
         `UPDATE boletos SET status='reservado', buyer_name=$1, phone=$2, 
-         email=$3, reservation_date=NOW() WHERE rifa_id=$4 AND number=$5`,
-        [name, phone, email, rifaId, number]
+         reservation_date=NOW() WHERE rifa_id=$3 AND number=$4`,
+        [name, phone, rifaId, number]
       );
     }
     

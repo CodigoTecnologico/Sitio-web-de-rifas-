@@ -24,11 +24,11 @@ router.get(
 router.post(
   '/reserve',
   [
-    body('rifaId').isInt(),
+    body('rifaId').isInt().withMessage('rifaId debe ser entero'),
     body('numbers').isArray({ min: 1 }).withMessage('Debe seleccionar al menos un número'),
     body('name').isString().trim().notEmpty().withMessage('Nombre requerido'),
-    body('phone').isString().trim().notEmpty().withMessage('Teléfono requerido'),
-    body('email').optional().isEmail().withMessage('Email inválido')
+    body('phone').isString().trim().notEmpty().withMessage('Teléfono requerido')
+    // Se eliminó la validación de email
   ],
   validate,
   boletosController.reserve
