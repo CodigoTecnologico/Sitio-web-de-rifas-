@@ -1,7 +1,7 @@
 // =============================================
 // CONFIGURACIÓN
 // =============================================
-const ADMIN_WHATSAPP_NUMBER = '524422556148'; // ⚠️ Cambia por el número del administrador
+const ADMIN_WHATSAPP_NUMBER = '521XXXXXXXXX'; // ⚠️ Cambia por el número del administrador (código de país + número)
 
 let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
@@ -305,7 +305,6 @@ function showNumberDetail(boleto) {
     const isSelected = selectedNumbers.includes(boleto.number);
     const isAvailable = boleto.status === 'disponible';
 
-    // Construir HTML seguro
     let contenidoHtml = '<p><em>Sin contenido adicional</em></p>';
     if (boleto.contenido) {
         contenidoHtml = `<p><strong>Contenido:</strong> ${escapeHtml(boleto.contenido)}</p>`;
@@ -425,6 +424,7 @@ async function confirmPurchase() {
     openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
 
     try {
+        const emailValue = getElement('clientEmail').value.trim();
         await apiFetch('/api/boletos/reserve', {
             method: 'POST',
             body: JSON.stringify({
@@ -432,7 +432,7 @@ async function confirmPurchase() {
                 numbers: selectedNumbers,
                 name: clientName,
                 phone: clientPhone,
-                email: getElement('clientEmail').value.trim()
+                email: emailValue || null   // <-- Corrección: enviar null si está vacío
             })
         });
 
