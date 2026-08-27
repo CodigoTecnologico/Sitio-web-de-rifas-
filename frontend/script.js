@@ -237,7 +237,7 @@ function renderRifasShowcase() {
     });
 
     updateCountdowns();
-    renderResultados(); // <-- Mostrar tabla de resultados
+    renderResultados();
 }
 
 function renderResultados() {
@@ -245,7 +245,6 @@ function renderResultados() {
     const resultsTable = getElement('resultsTable');
     if (!resultsSection || !resultsTable) return;
 
-    // Filtrar rifas finalizadas o con ganador
     const finalizadas = rifas.filter(rifa => 
         new Date(rifa.date) < new Date() || rifa.ganador_boleto_id
     );
@@ -744,19 +743,19 @@ function editRifa(id) {
     closeModal('editRifasModal');
     getElement('editSingleRifaModal').classList.add('active');
 
-    // Agregar botón de sorteo automático (lotería nacional)
+    // Botón de sorteo automático
     const modalContent = document.querySelector('#editSingleRifaModal .modal-content');
-    const oldBtn = document.getElementById('setGanadorBtn');
-    if (oldBtn) oldBtn.remove();
+    const oldAutoBtn = document.getElementById('setGanadorBtn');
+    if (oldAutoBtn) oldAutoBtn.remove();
 
-    const ganadorBtn = document.createElement('button');
-    ganadorBtn.id = 'setGanadorBtn';
-    ganadorBtn.className = 'btn btn-warning btn-block';
-    ganadorBtn.textContent = '🏆 Registrar número ganador (Lotería)';
-    ganadorBtn.onclick = () => setGanador(id);
-    modalContent.appendChild(ganadorBtn);
+    const autoBtn = document.createElement('button');
+    autoBtn.id = 'setGanadorBtn';
+    autoBtn.className = 'btn btn-warning btn-block';
+    autoBtn.textContent = '🏆 Registrar ganador (Lotería)';
+    autoBtn.onclick = () => setGanador(id);
+    modalContent.appendChild(autoBtn);
 
-    // Agregar botón para guardar ganador manual
+    // Botón de guardar manual
     const oldManualBtn = document.getElementById('saveGanadorManualBtn');
     if (oldManualBtn) oldManualBtn.remove();
 
@@ -766,6 +765,19 @@ function editRifa(id) {
     manualBtn.textContent = '💾 Guardar ganador manual';
     manualBtn.onclick = () => saveGanadorManual();
     modalContent.appendChild(manualBtn);
+
+    // Botón de limpiar ganador (solo si existe)
+    const oldClearBtn = document.getElementById('clearGanadorBtn');
+    if (oldClearBtn) oldClearBtn.remove();
+
+    if (rifa.ganador_boleto_id) {
+        const clearBtn = document.createElement('button');
+        clearBtn.id = 'clearGanadorBtn';
+        clearBtn.className = 'btn btn-danger btn-block';
+        clearBtn.textContent = '🗑️ Eliminar ganador';
+        clearBtn.onclick = () => clearGanador();
+        modalContent.appendChild(clearBtn);
+    }
 }
 
 async function setGanador(rifaId) {
@@ -796,7 +808,7 @@ async function saveGanadorManual() {
     }
 
     try {
-        await apiFetch(`/api/rifas/${rifaId}/ganador`, {
+        await apiFetch(`/api/rifas/${rifaId}/ganador-manual`, {
             method: 'PUT',
             body: JSON.stringify({
                 numero_ganador,
@@ -805,6 +817,22 @@ async function saveGanadorManual() {
             })
         });
         showToast('✅ Ganador guardado correctamente', 'success');
+        await refreshAdminUI();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+async function clearGanador() {
+    const rifaId = getElement('editRifaId').value;
+    if (!rifaId) return;
+    if (!confirm('¿Seguro que deseas eliminar el ganador actual?')) return;
+
+    try {
+        await apiFetch(`/api/rifas/${rifaId}/ganador`, {
+            method: 'DELETE'
+        });
+        showToast('✅ Ganador eliminado correctamente', 'success');
         await refreshAdminUI();
     } catch (err) {
         showToast(err.message, 'error');

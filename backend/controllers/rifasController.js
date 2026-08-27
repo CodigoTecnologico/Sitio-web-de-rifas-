@@ -172,3 +172,51 @@ exports.setGanador = async (req, res) => {
     client.release();
   }
 };
+
+// Actualizar ganador manualmente
+exports.updateGanadorManual = async (req, res) => {
+  const { id } = req.params;
+  const { numero_ganador, boleto_ganador, nombre_ganador } = req.body;
+
+  if (!numero_ganador) {
+    return res.status(400).json({ error: 'Número ganador requerido' });
+  }
+
+  try {
+    let ganadorBoletoId = null;
+    if (boleto_ganador) {
+      const boleto = await pool.query(
+        'SELECT id FROM boletos WHERE rifa_id = $1 AND number = $2 LIMIT 1',
+        [id, boleto_ganador]
+      );
+      if (boleto.rows.length > 0) {
+        ganadorBoletoId = boleto.rows[0].id;
+      }
+    }
+
+    await pool.query(
+      'UPDATE rifas SET numero_ganador = $1, ganador_boleto_id = $2, ganador_comprador = $3 WHERE id = $4',
+      [numero_ganador, ganadorBoletoId, nombre_ganador || null, id]
+    );
+
+    res.json({ message: 'Ganador actualizado correctamente' });
+  } catch (err) {
+    console.error('Error al actualizar ganador manual:', err);
+    res.status(500).json({ error: 'Error al actualizar ganador' });
+  }
+};
+
+// Limpiar ganador
+exports.clearGanador = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      'UPDATE rifas SET numero_ganador = NULL, ganador_boleto_id = NULL, ganador_comprador = NULL WHERE id = $1',
+      [id]
+    );
+    res.json({ message: 'Ganador eliminado correctamente' });
+  } catch (err) {
+    console.error('Error al limpiar ganador:', err);
+    res.status(500).json({ error: 'Error al limpiar ganador' });
+  }
+};

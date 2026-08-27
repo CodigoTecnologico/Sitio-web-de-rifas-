@@ -33,6 +33,14 @@ router.put('/:id', auth, [
 ], validate, rifasController.update);
 
 router.delete('/:id', auth, param('id').isInt(), validate, rifasController.delete);
+
+// Ruta para registrar ganador automáticamente (lotería nacional)
 router.post('/:id/set-ganador', auth, param('id').isInt(), validate, rifasController.setGanador);
+
+// Ruta para actualizar ganador manualmente
+router.put('/:id/ganador-manual', auth, param('id').isInt(), validate, rifasController.updateGanadorManual);
+
+// Ruta para limpiar ganador
+router.delete('/:id/ganador', auth, param('id').isInt(), validate, rifasController.clearGanador);
 
 module.exports = router;
