@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Login -->
+    <!-- Modal de Login -->
     <div id="loginModal" class="login-modal">
         <div class="login-content">
             <h2>🔐 Acceso Administrativo</h2>
@@ -19,7 +19,7 @@
     </div>
 
     <div class="container">
-        <!-- Banner -->
+        <!-- Banner Principal -->
         <div class="header-banner" id="headerBanner">
             <div class="banner-overlay">
                 <div class="banner-title">🎰 LOTERÍA PREMIUM</div>
@@ -27,6 +27,7 @@
             </div>
         </div>
 
+        <!-- Navegación -->
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="switchView('public')">🎫 Comprar Números</button>
         </div>
@@ -37,6 +38,26 @@
             <h1>🎲 Rifas Disponibles</h1>
             <p class="subtitle">Elige tu rifa favorita y selecciona tus números de la suerte</p>
             <div class="rifas-showcase" id="rifasShowcase"></div>
+
+            <!-- Sección de resultados -->
+            <div class="results-section" id="resultsSection" style="display:none; margin-top:40px;">
+                <h2>🏆 Resultados de sorteos</h2>
+                <div class="responsive-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rifa</th>
+                                <th>Fecha</th>
+                                <th>N° Lotería</th>
+                                <th>Boleto ganador</th>
+                                <th>Comprador</th>
+                                <th>Transmisión</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTable"></tbody>
+                    </table>
+                </div>
+            </div>
 
             <div class="numbers-section" id="numbersSection" style="display:none;">
                 <div class="numbers-header">
@@ -92,14 +113,14 @@
         </div>
     </div>
 
-    <!-- Carrito -->
+    <!-- Carrito de Compras -->
     <div class="cart-summary" id="cartSummary" onclick="showCheckout()" style="display:none;">
         <span class="cart-icon">🛒</span>
         <div class="cart-count" id="cartCount">0</div>
         <span>Ver selección</span>
     </div>
 
-    <!-- Checkout -->
+    <!-- Modal de Checkout -->
     <div id="checkoutModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('checkoutModal')">&times;</span>
@@ -112,7 +133,7 @@
         </div>
     </div>
 
-    <!-- Modal detalle número -->
+    <!-- Modal de detalle de número -->
     <div id="numberDetailModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('numberDetailModal')">&times;</span>
@@ -122,7 +143,7 @@
         </div>
     </div>
 
-    <!-- Modal editar boleto -->
+    <!-- Modal para editar número (admin) -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('editModal')">&times;</span>
@@ -139,7 +160,7 @@
         </div>
     </div>
 
-    <!-- Modal editar rifas -->
+    <!-- Modal para editar rifas -->
     <div id="editRifasModal" class="modal">
         <div class="modal-content modal-large">
             <span class="close-modal" onclick="closeModal('editRifasModal')">&times;</span>
@@ -149,7 +170,7 @@
         </div>
     </div>
 
-    <!-- Modal crear/editar rifa -->
+    <!-- Modal para crear/editar una rifa -->
     <div id="editSingleRifaModal" class="modal">
         <div class="modal-content modal-large">
             <span class="close-modal" onclick="closeModal('editSingleRifaModal')">&times;</span>
@@ -162,14 +183,19 @@
             <div class="form-group"><label>Fecha del sorteo:</label><input type="datetime-local" id="editRifaDate"></div>
             <div class="form-group"><label>Enlace de transmisión (opcional):</label><input type="url" id="editRifaStreamUrl" placeholder="https://..."></div>
             <div class="form-group"><label>Duración de la transmisión (minutos):</label><input type="number" id="editRifaStreamDuration" min="1" value="60"></div>
+            <div class="form-group"><label>Número ganador (Lotería Nacional):</label><input type="text" id="editRifaNumeroGanador" placeholder="Ej: 58321"></div>
+            <div class="form-group"><label>Boleto ganador (número):</label><input type="number" id="editRifaBoletoGanador" min="1"></div>
+            <div class="form-group"><label>Nombre del ganador:</label><input type="text" id="editRifaNombreGanador" placeholder="Nombre del comprador"></div>
             <div class="form-group"><label>Cantidad de boletos:</label><input type="number" id="editRifaTotal" min="1" value="100"></div>
             <div class="form-group"><label>Precio:</label><input type="number" id="editRifaPrice" step="0.01" value="10"></div>
             <button class="btn btn-primary" onclick="saveSingleRifa()">💾 Guardar Rifa</button>
             <button class="btn btn-danger" onclick="closeModal('editSingleRifaModal')">Cancelar</button>
+            <button id="setGanadorBtn" class="btn btn-warning btn-block" onclick="setGanador()">🏆 Registrar número ganador (Lotería)</button>
+            <button id="saveGanadorManualBtn" class="btn btn-success btn-block" onclick="saveGanadorManual()">💾 Guardar ganador manual</button>
         </div>
     </div>
 
-    <!-- Modal banners -->
+    <!-- Modal para gestión de banners -->
     <div id="bannerModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('bannerModal')">&times;</span>
@@ -184,7 +210,7 @@
         </div>
     </div>
 
-    <!-- Modal reporte -->
+    <!-- Modal para reporte -->
     <div id="reportModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('reportModal')">&times;</span>

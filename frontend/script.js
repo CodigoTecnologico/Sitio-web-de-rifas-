@@ -237,6 +237,41 @@ function renderRifasShowcase() {
     });
 
     updateCountdowns();
+    renderResultados(); // <-- Mostrar tabla de resultados
+}
+
+function renderResultados() {
+    const resultsSection = getElement('resultsSection');
+    const resultsTable = getElement('resultsTable');
+    if (!resultsSection || !resultsTable) return;
+
+    // Filtrar rifas finalizadas o con ganador
+    const finalizadas = rifas.filter(rifa => 
+        new Date(rifa.date) < new Date() || rifa.ganador_boleto_id
+    );
+
+    if (finalizadas.length === 0) {
+        resultsSection.style.display = 'none';
+        return;
+    }
+
+    resultsSection.style.display = 'block';
+    resultsTable.innerHTML = '';
+
+    finalizadas.forEach(rifa => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${rifa.name}</td>
+            <td>${new Date(rifa.date).toLocaleString()}</td>
+            <td>${rifa.numero_ganador || '—'}</td>
+            <td>${rifa.ganador_numero ? '#' + rifa.ganador_numero : '—'}</td>
+            <td>${rifa.ganador_comprador || '—'}</td>
+            <td>
+                ${rifa.stream_url ? `<a href="${rifa.stream_url}" target="_blank" class="live-button" style="background:#555; padding:5px 10px;">📼 Ver retransmisión</a>` : '—'}
+            </td>
+        `;
+        resultsTable.appendChild(row);
+    });
 }
 
 async function selectRifa(rifaId) {
@@ -679,6 +714,10 @@ function showCreateRifa() {
     getElement('editRifaPrice').value = 10;
     getElement('rifaImagePreview').innerHTML = '';
     getElement('editRifaImage').value = '';
+    // Limpiar campos de ganador
+    getElement('editRifaNumeroGanador').value = '';
+    getElement('editRifaBoletoGanador').value = '';
+    getElement('editRifaNombreGanador').value = '';
     closeModal('editRifasModal');
     getElement('editSingleRifaModal').classList.add('active');
 }
@@ -698,10 +737,14 @@ function editRifa(id) {
     getElement('editRifaPrice').value = rifa.price;
     getElement('rifaImagePreview').innerHTML = `<img src="${rifa.image_url || PLACEHOLDER_IMAGE}" class="rifa-image-preview">`;
     getElement('editRifaImage').value = '';
+    // Cargar datos del ganador si existen
+    getElement('editRifaNumeroGanador').value = rifa.numero_ganador || '';
+    getElement('editRifaBoletoGanador').value = rifa.ganador_numero || '';
+    getElement('editRifaNombreGanador').value = rifa.ganador_comprador || '';
     closeModal('editRifasModal');
     getElement('editSingleRifaModal').classList.add('active');
 
-    // Agregar botón de sorteo
+    // Agregar botón de sorteo automático (lotería nacional)
     const modalContent = document.querySelector('#editSingleRifaModal .modal-content');
     const oldBtn = document.getElementById('setGanadorBtn');
     if (oldBtn) oldBtn.remove();
@@ -709,9 +752,20 @@ function editRifa(id) {
     const ganadorBtn = document.createElement('button');
     ganadorBtn.id = 'setGanadorBtn';
     ganadorBtn.className = 'btn btn-warning btn-block';
-    ganadorBtn.textContent = '🏆 Registrar número ganador';
+    ganadorBtn.textContent = '🏆 Registrar número ganador (Lotería)';
     ganadorBtn.onclick = () => setGanador(id);
     modalContent.appendChild(ganadorBtn);
+
+    // Agregar botón para guardar ganador manual
+    const oldManualBtn = document.getElementById('saveGanadorManualBtn');
+    if (oldManualBtn) oldManualBtn.remove();
+
+    const manualBtn = document.createElement('button');
+    manualBtn.id = 'saveGanadorManualBtn';
+    manualBtn.className = 'btn btn-success btn-block';
+    manualBtn.textContent = '💾 Guardar ganador manual';
+    manualBtn.onclick = () => saveGanadorManual();
+    modalContent.appendChild(manualBtn);
 }
 
 async function setGanador(rifaId) {
@@ -724,6 +778,33 @@ async function setGanador(rifaId) {
             body: JSON.stringify({ numero_ganador: numero })
         });
         showToast(`🏆 Ganador: Boleto ${res.ganador.boleto} - ${res.ganador.comprador}`, 'success');
+        await refreshAdminUI();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+async function saveGanadorManual() {
+    const rifaId = getElement('editRifaId').value;
+    const numero_ganador = getElement('editRifaNumeroGanador').value.trim();
+    const boleto_ganador = getElement('editRifaBoletoGanador').value.trim();
+    const nombre_ganador = getElement('editRifaNombreGanador').value.trim();
+
+    if (!numero_ganador) {
+        showToast('⚠️ Ingresa el número ganador', 'warning');
+        return;
+    }
+
+    try {
+        await apiFetch(`/api/rifas/${rifaId}/ganador`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                numero_ganador,
+                boleto_ganador: boleto_ganador ? parseInt(boleto_ganador) : null,
+                nombre_ganador
+            })
+        });
+        showToast('✅ Ganador guardado correctamente', 'success');
         await refreshAdminUI();
     } catch (err) {
         showToast(err.message, 'error');
