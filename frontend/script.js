@@ -1,7 +1,7 @@
 // =============================================
 // CONFIGURACIÓN
 // =============================================
-const ADMIN_WHATSAPP_NUMBER = '521XXXXXXXXX'; // ⚠️ Cambia por el número del administrador (código de país + número)
+const ADMIN_WHATSAPP_NUMBER = '521XXXXXXXXX'; // ⚠️ Cambia por el número del administrador
 
 let authToken = localStorage.getItem('authToken') || '';
 let isAdmin = false;
@@ -179,11 +179,14 @@ function renderRifasShowcase() {
         const total = rifa.total_boletos;
         const available = rifa.available_boletos || 0;
 
-        // Ventana de transmisión en vivo
+        // Configurar ventana de transmisión
         const now = new Date();
-        const startWindow = new Date(rifa.date) - 60 * 60 * 1000;
-        const endWindow = new Date(rifa.date) + 60 * 60 * 1000;
-        const isLiveWindow = now >= startWindow && now <= endWindow && rifa.stream_url;
+        const raffleDate = new Date(rifa.date);
+        const durationMs = (rifa.stream_duration || 60) * 60 * 1000; // duración en minutos → ms
+        const liveStart = new Date(raffleDate.getTime() - 5 * 60 * 1000); // 5 min antes
+        const liveEnd = new Date(raffleDate.getTime() + durationMs);
+        const isLive = now >= liveStart && now <= liveEnd && rifa.stream_url;
+        const isAfter = now > liveEnd && rifa.stream_url;
 
         const card = document.createElement('div');
         card.className = 'rifa-card';
@@ -214,8 +217,11 @@ function renderRifasShowcase() {
                 ` : `
                     <div class="rifa-expired">⏰ Rifa finalizada</div>
                 `}
-                ${isLiveWindow ? `
+                ${isLive ? `
                     <a href="${rifa.stream_url}" target="_blank" class="live-button">🔴 Ver sorteo en vivo</a>
+                ` : ''}
+                ${isAfter ? `
+                    <a href="${rifa.stream_url}" target="_blank" class="live-button" style="background:#555;">📼 Ver retransmisión</a>
                 ` : ''}
                 ${rifa.ganador_boleto_id ? `
                     <div class="rifa-winner">
@@ -671,6 +677,7 @@ function showCreateRifa() {
     getElement('editRifaBadge').value = '';
     getElement('editRifaDate').value = '';
     getElement('editRifaStreamUrl').value = '';
+    getElement('editRifaStreamDuration').value = 60;
     getElement('editRifaTotal').value = 100;
     getElement('editRifaPrice').value = 10;
     getElement('rifaImagePreview').innerHTML = '';
@@ -689,6 +696,7 @@ function editRifa(id) {
     getElement('editRifaBadge').value = rifa.badge || '';
     getElement('editRifaDate').value = rifa.date;
     getElement('editRifaStreamUrl').value = rifa.stream_url || '';
+    getElement('editRifaStreamDuration').value = rifa.stream_duration || 60;
     getElement('editRifaTotal').value = rifa.total_boletos;
     getElement('editRifaPrice').value = rifa.price;
     getElement('rifaImagePreview').innerHTML = `<img src="${rifa.image_url || PLACEHOLDER_IMAGE}" class="rifa-image-preview">`;
@@ -757,6 +765,7 @@ async function saveSingleRifa() {
     const badge = getElement('editRifaBadge').value.trim();
     const date = getElement('editRifaDate').value;
     const stream_url = getElement('editRifaStreamUrl').value.trim();
+    const stream_duration = parseInt(getElement('editRifaStreamDuration').value) || 60;
     const total = parseInt(getElement('editRifaTotal').value);
     const price = parseFloat(getElement('editRifaPrice').value);
 
@@ -777,7 +786,7 @@ async function saveSingleRifa() {
         image_url = rifas.find(r => r.id == id)?.image_url || null;
     }
 
-    const data = { name, description, price, total_boletos: total, image_url, badge, date, stream_url };
+    const data = { name, description, price, total_boletos: total, image_url, badge, date, stream_url, stream_duration };
     try {
         if (id) {
             await apiFetch(`/api/rifas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
