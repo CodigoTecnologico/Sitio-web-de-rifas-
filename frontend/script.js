@@ -182,8 +182,8 @@ function renderRifasShowcase() {
         // Configurar ventana de transmisión
         const now = new Date();
         const raffleDate = new Date(rifa.date);
-        const durationMs = (rifa.stream_duration || 60) * 60 * 1000; // duración en minutos → ms
-        const liveStart = new Date(raffleDate.getTime() - 5 * 60 * 1000); // 5 min antes
+        const durationMs = (rifa.stream_duration || 60) * 60 * 1000;
+        const liveStart = new Date(raffleDate.getTime() - 5 * 60 * 1000);
         const liveEnd = new Date(raffleDate.getTime() + durationMs);
         const isLive = now >= liveStart && now <= liveEnd && rifa.stream_url;
         const isAfter = now > liveEnd && rifa.stream_url;
@@ -220,15 +220,12 @@ function renderRifasShowcase() {
                 ${isLive ? `
                     <a href="${rifa.stream_url}" target="_blank" class="live-button">🔴 Ver sorteo en vivo</a>
                 ` : ''}
-                ${isAfter ? `
+                ${isAfter && !rifa.ganador_boleto_id ? `
                     <a href="${rifa.stream_url}" target="_blank" class="live-button" style="background:#555;">📼 Ver retransmisión</a>
                 ` : ''}
                 ${rifa.ganador_boleto_id ? `
-                    <div class="rifa-winner">
-                        🏆 <strong>¡Tenemos ganador!</strong><br>
-                        Boleto: #${rifa.ganador_numero || 'N/D'}<br>
-                        Comprador: ${rifa.ganador_comprador || 'N/D'}<br>
-                        N° Lotería: ${rifa.numero_ganador || 'N/D'}
+                    <div class="winner-inline">
+                        🏆 <strong>Ganador:</strong> Boleto #${rifa.ganador_numero || 'N/D'} — N° Lotería: ${rifa.numero_ganador || 'N/D'}
                     </div>
                 ` : ''}
                 <button class="btn btn-primary btn-block" onclick="selectRifa(${rifa.id})" ${isExpired ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>

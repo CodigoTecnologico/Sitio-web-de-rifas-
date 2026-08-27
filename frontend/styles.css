@@ -652,3 +652,15 @@ tr:hover { background: #f9f9f9; }
     text-align: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
+/* Etiqueta compacta de ganador */
+.winner-inline {
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+    display: inline-block;
+}
