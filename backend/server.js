@@ -101,6 +101,7 @@ async function initializeDatabase() {
       stream_duration INTEGER DEFAULT 60,
       numero_ganador VARCHAR(50),
       ganador_boleto_id INTEGER,
+      ganador_comprador VARCHAR(150),
       created_at TIMESTAMP DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS boletos (
@@ -136,6 +137,7 @@ async function initializeDatabase() {
     await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS stream_duration INTEGER DEFAULT 60');
     await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS numero_ganador VARCHAR(50)');
     await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS ganador_boleto_id INTEGER');
+    await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS ganador_comprador VARCHAR(150)');
     console.log('✅ Columnas verificadas');
 
     const adminExists = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);

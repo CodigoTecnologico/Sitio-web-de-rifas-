@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Modal de Login -->
+    <!-- Login -->
     <div id="loginModal" class="login-modal">
         <div class="login-content">
             <h2>🔐 Acceso Administrativo</h2>
@@ -19,7 +19,7 @@
     </div>
 
     <div class="container">
-        <!-- Banner Principal -->
+        <!-- Banner -->
         <div class="header-banner" id="headerBanner">
             <div class="banner-overlay">
                 <div class="banner-title">🎰 LOTERÍA PREMIUM</div>
@@ -27,7 +27,6 @@
             </div>
         </div>
 
-        <!-- Navegación -->
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="switchView('public')">🎫 Comprar Números</button>
         </div>
@@ -113,14 +112,14 @@
         </div>
     </div>
 
-    <!-- Carrito de Compras -->
+    <!-- Carrito -->
     <div class="cart-summary" id="cartSummary" onclick="showCheckout()" style="display:none;">
         <span class="cart-icon">🛒</span>
         <div class="cart-count" id="cartCount">0</div>
         <span>Ver selección</span>
     </div>
 
-    <!-- Modal de Checkout -->
+    <!-- Checkout -->
     <div id="checkoutModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('checkoutModal')">&times;</span>
@@ -133,7 +132,7 @@
         </div>
     </div>
 
-    <!-- Modal de detalle de número -->
+    <!-- Modal detalle número -->
     <div id="numberDetailModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('numberDetailModal')">&times;</span>
@@ -143,7 +142,7 @@
         </div>
     </div>
 
-    <!-- Modal para editar número (admin) -->
+    <!-- Modal editar boleto -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('editModal')">&times;</span>
@@ -160,7 +159,7 @@
         </div>
     </div>
 
-    <!-- Modal para editar rifas -->
+    <!-- Modal editar rifas -->
     <div id="editRifasModal" class="modal">
         <div class="modal-content modal-large">
             <span class="close-modal" onclick="closeModal('editRifasModal')">&times;</span>
@@ -170,7 +169,7 @@
         </div>
     </div>
 
-    <!-- Modal para crear/editar una rifa -->
+    <!-- Modal crear/editar rifa -->
     <div id="editSingleRifaModal" class="modal">
         <div class="modal-content modal-large">
             <span class="close-modal" onclick="closeModal('editSingleRifaModal')">&times;</span>
@@ -193,7 +192,19 @@
         </div>
     </div>
 
-    <!-- Modal para gestión de banners -->
+    <!-- Modal para registrar ganador automático -->
+    <div id="ganadorModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('ganadorModal')">&times;</span>
+            <h2>🏆 Registrar ganador</h2>
+            <p>Ingresa el número ganador de la Lotería Nacional:</p>
+            <input type="text" id="ganadorNumeroLotería" class="login-input" placeholder="Ej: 58321">
+            <button class="btn btn-warning btn-block" onclick="confirmSetGanador()">Registrar</button>
+            <button class="btn btn-secondary btn-block" onclick="closeModal('ganadorModal')">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal banners -->
     <div id="bannerModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('bannerModal')">&times;</span>
@@ -208,7 +219,7 @@
         </div>
     </div>
 
-    <!-- Modal para reporte -->
+    <!-- Modal reporte -->
     <div id="reportModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('reportModal')">&times;</span>

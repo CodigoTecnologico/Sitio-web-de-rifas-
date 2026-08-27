@@ -20,13 +20,19 @@ exports.reserve = async (req, res) => {
   if (!rifaId || !numbers || numbers.length === 0 || !name || !phone) {
     return res.status(400).json({ error: 'Datos incompletos' });
   }
+
+  // Eliminar duplicados en numbers
+  const uniqueNumbers = [...new Set(numbers)];
+  if (uniqueNumbers.length !== numbers.length) {
+    return res.status(400).json({ error: 'Hay números duplicados en la reserva' });
+  }
   
   const client = await pool.connect();
   
   try {
     await client.query('BEGIN');
     
-    for (const number of numbers) {
+    for (const number of uniqueNumbers) {
       const result = await client.query(
         'SELECT status FROM boletos WHERE rifa_id = $1 AND number = $2 FOR UPDATE',
         [rifaId, number]

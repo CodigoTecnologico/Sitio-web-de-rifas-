@@ -6,7 +6,7 @@ exports.getAll = async (req, res) => {
       SELECT r.*, 
              COALESCE(b.available_count, 0) AS available_boletos,
              bg.number AS ganador_numero,
-             bg.buyer_name AS ganador_comprador
+             COALESCE(r.ganador_comprador, bg.buyer_name) AS ganador_comprador
       FROM rifas r
       LEFT JOIN (
         SELECT rifa_id, COUNT(*) AS available_count
@@ -160,8 +160,8 @@ exports.setGanador = async (req, res) => {
     const ganador = boletos.rows[sumaDigitos % boletos.rows.length];
 
     await client.query(
-      'UPDATE rifas SET numero_ganador = $1, ganador_boleto_id = $2 WHERE id = $3',
-      [numero_ganador, ganador.id, id]
+      'UPDATE rifas SET numero_ganador = $1, ganador_boleto_id = $2, ganador_comprador = $3 WHERE id = $4',
+      [numero_ganador, ganador.id, ganador.buyer_name, id]
     );
 
     res.json({ message: 'Ganador determinado', ganador: { boleto: ganador.number, comprador: ganador.buyer_name, telefono: ganador.phone } });

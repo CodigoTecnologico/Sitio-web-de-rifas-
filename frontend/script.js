@@ -223,9 +223,11 @@ function renderRifasShowcase() {
                 ${isAfter && !rifa.ganador_boleto_id ? `
                     <a href="${rifa.stream_url}" target="_blank" class="live-button" style="background:#555;">📼 Ver retransmisión</a>
                 ` : ''}
-                ${rifa.ganador_boleto_id ? `
+                ${(rifa.ganador_boleto_id || rifa.numero_ganador) ? `
                     <div class="winner-inline">
-                        🏆 <strong>Ganador:</strong> Boleto #${rifa.ganador_numero || 'N/D'} — N° Lotería: ${rifa.numero_ganador || 'N/D'}
+                        🏆 <strong>Ganador:</strong> 
+                        ${rifa.ganador_numero ? 'Boleto #' + rifa.ganador_numero : ''} 
+                        ${rifa.numero_ganador ? ' — N° Lotería: ' + rifa.numero_ganador : ''}
                     </div>
                 ` : ''}
                 <button class="btn btn-primary btn-block" onclick="selectRifa(${rifa.id})" ${isExpired ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
@@ -246,7 +248,7 @@ function renderResultados() {
     if (!resultsSection || !resultsTable) return;
 
     const finalizadas = rifas.filter(rifa => 
-        new Date(rifa.date) < new Date() || rifa.ganador_boleto_id
+        new Date(rifa.date) < new Date() || rifa.ganador_boleto_id || rifa.numero_ganador
     );
 
     if (finalizadas.length === 0) {
@@ -688,7 +690,7 @@ function renderRifasEditList() {
                     Precio: $${rifa.price} | Boletos: ${rifa.total_boletos} | 
                     Fecha: ${new Date(rifa.date).toLocaleString()}
                     ${rifa.stream_url ? ' | 🔴 Transmisión configurada' : ''}
-                    ${rifa.ganador_boleto_id ? ' | 🏆 Ganador definido' : ''}
+                    ${rifa.ganador_boleto_id || rifa.numero_ganador ? ' | 🏆 Ganador definido' : ''}
                 </div>
             </div>
             <div class="rifa-edit-actions">
@@ -752,7 +754,7 @@ function editRifa(id) {
     autoBtn.id = 'setGanadorBtn';
     autoBtn.className = 'btn btn-warning btn-block';
     autoBtn.textContent = '🏆 Registrar ganador (Lotería)';
-    autoBtn.onclick = () => setGanador(id);
+    autoBtn.onclick = () => showGanadorModal(id);
     modalContent.appendChild(autoBtn);
 
     // Botón de guardar manual
@@ -770,7 +772,7 @@ function editRifa(id) {
     const oldClearBtn = document.getElementById('clearGanadorBtn');
     if (oldClearBtn) oldClearBtn.remove();
 
-    if (rifa.ganador_boleto_id) {
+    if (rifa.ganador_boleto_id || rifa.numero_ganador) {
         const clearBtn = document.createElement('button');
         clearBtn.id = 'clearGanadorBtn';
         clearBtn.className = 'btn btn-danger btn-block';
@@ -780,9 +782,25 @@ function editRifa(id) {
     }
 }
 
-async function setGanador(rifaId) {
-    const numero = prompt('Ingresa el número ganador de la Lotería Nacional:');
-    if (!numero) return;
+function showGanadorModal(rifaId) {
+    const modal = getElement('ganadorModal');
+    if (modal) {
+        modal.classList.add('active');
+        getElement('ganadorNumeroLotería').value = '';
+        // Guardamos el id de rifa en un atributo data-* para usarlo después
+        modal.dataset.rifaId = rifaId;
+    }
+}
+
+async function confirmSetGanador() {
+    const numero = getElement('ganadorNumeroLotería').value.trim();
+    if (!numero) {
+        showToast('⚠️ Ingresa el número', 'warning');
+        return;
+    }
+
+    const rifaId = getElement('ganadorModal').dataset.rifaId;
+    if (!rifaId) return;
 
     try {
         const res = await apiFetch(`/api/rifas/${rifaId}/set-ganador`, {
@@ -790,6 +808,7 @@ async function setGanador(rifaId) {
             body: JSON.stringify({ numero_ganador: numero })
         });
         showToast(`🏆 Ganador: Boleto ${res.ganador.boleto} - ${res.ganador.comprador}`, 'success');
+        closeModal('ganadorModal');
         await refreshAdminUI();
     } catch (err) {
         showToast(err.message, 'error');
