@@ -166,3 +166,58 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar rifa' });
   }
 };
+
+exports.setGanador = async (req, res) => {
+  const { id } = req.params;
+  const { numero_ganador } = req.body;
+
+  if (!numero_ganador) {
+    return res.status(400).json({ error: 'Número ganador requerido' });
+  }
+
+  const client = await pool.connect();
+  try {
+    // Obtener boletos vendidos/reservados de la rifa
+    const boletos = await client.query(
+      `SELECT id, number, status FROM boletos 
+       WHERE rifa_id = $1 AND status IN ('vendido','reservado')
+       ORDER BY number ASC`,
+      [id]
+    );
+
+    if (boletos.rows.length === 0) {
+      return res.status(400).json({ error: 'No hay boletos vendidos para elegir ganador' });
+    }
+
+    // Calcular suma de dígitos
+    const sumaDigitos = numero_ganador
+      .replace(/\D/g, '') // solo números
+      .split('')
+      .reduce((acc, digit) => acc + parseInt(digit), 0);
+
+    const totalVendidos = boletos.rows.length;
+    const indiceGanador = sumaDigitos % totalVendidos;
+
+    const boletoGanador = boletos.rows[indiceGanador];
+
+    // Guardar en la rifa
+    await client.query(
+      `UPDATE rifas SET numero_ganador = $1, ganador_boleto_id = $2 WHERE id = $3`,
+      [numero_ganador, boletoGanador.id, id]
+    );
+
+    res.json({
+      message: 'Ganador determinado correctamente',
+      ganador: {
+        boleto: boletoGanador.number,
+        comprador: boletoGanador.buyer_name,
+        telefono: boletoGanador.phone
+      }
+    });
+  } catch (err) {
+    console.error('Error al determinar ganador:', err);
+    res.status(500).json({ error: 'Error al determinar ganador' });
+  } finally {
+    client.release();
+  }
+};

@@ -162,6 +162,11 @@ async function initializeDatabase() {
     await pool.query('ALTER TABLE boletos ADD COLUMN IF NOT EXISTS price NUMERIC(10,2)');
     console.log('✅ Columna price verificada en boletos');
 
+    await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS loteria_fecha DATE');
+    await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS numero_ganador VARCHAR(50)');
+    await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS ganador_boleto_id INTEGER REFERENCES boletos(id)');
+    console.log('✅ Columnas para sorteo verificadas');
+
     const adminExists = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);
     if (adminExists.rows.length === 0) {
       const passwordHash = await bcrypt.hash('admin123', 10);

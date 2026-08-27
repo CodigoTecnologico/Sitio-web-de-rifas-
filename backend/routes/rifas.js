@@ -53,3 +53,5 @@ router.put(
 router.delete('/:id', auth, param('id').isInt(), validate, rifasController.delete);
 
 module.exports = router;
+
+router.post('/:id/set-ganador', auth, rifasController.setGanador);

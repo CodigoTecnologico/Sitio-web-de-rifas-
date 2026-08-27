@@ -424,17 +424,14 @@ async function confirmPurchase() {
     openWhatsApp(ADMIN_WHATSAPP_NUMBER, mensajeAdmin);
 
     try {
-        // Construir objeto sin email
-        const payload = {
-            rifaId: currentRifaId,
-            numbers: selectedNumbers,
-            name: clientName,
-            phone: clientPhone
-        };
-
         await apiFetch('/api/boletos/reserve', {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                rifaId: currentRifaId,
+                numbers: selectedNumbers,
+                name: clientName,
+                phone: clientPhone
+            })
         });
 
         showToast('✅ ¡Números reservados exitosamente!', 'success');
@@ -727,6 +724,34 @@ function editRifa(id) {
     getElement('editRifaImage').value = '';
     closeModal('editRifasModal');
     getElement('editSingleRifaModal').classList.add('active');
+    
+    // Agregar botón de sorteo
+    const modalContent = document.querySelector('#editSingleRifaModal .modal-content');
+    const oldBtn = document.getElementById('setGanadorBtn');
+    if (oldBtn) oldBtn.remove();
+    
+    const ganadorBtn = document.createElement('button');
+    ganadorBtn.id = 'setGanadorBtn';
+    ganadorBtn.className = 'btn btn-warning btn-block';
+    ganadorBtn.textContent = '🏆 Registrar número ganador';
+    ganadorBtn.onclick = () => setGanador(id);
+    modalContent.appendChild(ganadorBtn);
+}
+
+async function setGanador(rifaId) {
+    const numero = prompt('Ingresa el número ganador de la Lotería Nacional:');
+    if (!numero) return;
+
+    try {
+        const res = await apiFetch(`/api/rifas/${rifaId}/set-ganador`, {
+            method: 'POST',
+            body: JSON.stringify({ numero_ganador: numero })
+        });
+        showToast(`🏆 Ganador: Boleto ${res.ganador.boleto} - ${res.ganador.comprador}`, 'success');
+        await refreshAdminUI();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
 }
 
 function previewRifaImage() {
