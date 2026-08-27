@@ -30,9 +30,7 @@ function showToast(message, type = 'info') {
     toast.className = `toast ${type}`;
     toast.textContent = message;
     container.appendChild(toast);
-    setTimeout(() => {
-        toast.remove();
-    }, 4000);
+    setTimeout(() => toast.remove(), 4000);
 }
 
 function escapeHtml(text) {
@@ -43,12 +41,8 @@ function escapeHtml(text) {
 
 async function apiFetch(url, options = {}) {
     const headers = { ...options.headers };
-    if (!(options.body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-    }
-    if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-    }
+    if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const response = await fetch(url, { ...options, headers });
     if (response.status === 401) {
         authToken = '';
@@ -154,11 +148,7 @@ async function loadAdminData() {
         const boletosMap = new Map();
         for (const rifa of rifas) {
             const boletosRifa = await apiFetch(`/api/boletos/rifa/${rifa.id}`);
-            boletosRifa.forEach(b => {
-                if (b.id && !boletosMap.has(b.id)) {
-                    boletosMap.set(b.id, b);
-                }
-            });
+            boletosRifa.forEach(b => { if (b.id && !boletosMap.has(b.id)) boletosMap.set(b.id, b); });
         }
         allBoletos = Array.from(boletosMap.values());
         updateAdminStats();
@@ -189,6 +179,12 @@ function renderRifasShowcase() {
         const total = rifa.total_boletos;
         const available = rifa.available_boletos || 0;
 
+        // Ventana de transmisión en vivo
+        const now = new Date();
+        const startWindow = new Date(rifa.date) - 60 * 60 * 1000;
+        const endWindow = new Date(rifa.date) + 60 * 60 * 1000;
+        const isLiveWindow = now >= startWindow && now <= endWindow && rifa.stream_url;
+
         const card = document.createElement('div');
         card.className = 'rifa-card';
         card.innerHTML = `
@@ -211,22 +207,24 @@ function renderRifasShowcase() {
                 </div>
                 ${!isExpired ? `
                     <div class="countdown-timer" id="countdown_${rifa.id}">
-                        <div class="countdown-item">
-                            <div class="countdown-value" id="rifa${rifa.id}_days">0</div>
-                            <div class="countdown-label">Días</div>
-                        </div>
-                        <div class="countdown-item">
-                            <div class="countdown-value" id="rifa${rifa.id}_hours">0</div>
-                            <div class="countdown-label">Horas</div>
-                        </div>
-                        <div class="countdown-item">
-                            <div class="countdown-value" id="rifa${rifa.id}_minutes">0</div>
-                            <div class="countdown-label">Min</div>
-                        </div>
+                        <div class="countdown-item"><div class="countdown-value" id="rifa${rifa.id}_days">0</div><div class="countdown-label">Días</div></div>
+                        <div class="countdown-item"><div class="countdown-value" id="rifa${rifa.id}_hours">0</div><div class="countdown-label">Horas</div></div>
+                        <div class="countdown-item"><div class="countdown-value" id="rifa${rifa.id}_minutes">0</div><div class="countdown-label">Min</div></div>
                     </div>
                 ` : `
                     <div class="rifa-expired">⏰ Rifa finalizada</div>
                 `}
+                ${isLiveWindow ? `
+                    <a href="${rifa.stream_url}" target="_blank" class="live-button">🔴 Ver sorteo en vivo</a>
+                ` : ''}
+                ${rifa.ganador_boleto_id ? `
+                    <div class="rifa-winner">
+                        🏆 <strong>¡Tenemos ganador!</strong><br>
+                        Boleto: #${rifa.ganador_numero || 'N/D'}<br>
+                        Comprador: ${rifa.ganador_comprador || 'N/D'}<br>
+                        N° Lotería: ${rifa.numero_ganador || 'N/D'}
+                    </div>
+                ` : ''}
                 <button class="btn btn-primary btn-block" onclick="selectRifa(${rifa.id})" ${isExpired ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
                     ${isExpired ? 'Finalizada' : '🎯 Seleccionar Números'}
                 </button>
@@ -287,11 +285,8 @@ function renderPublicGrid(searchTerm = '') {
     filtered.forEach(boleto => {
         const cell = document.createElement('div');
         let className = 'number-cell ';
-        if (selectedNumbers.includes(boleto.number)) {
-            className += 'seleccionado';
-        } else {
-            className += boleto.status;
-        }
+        if (selectedNumbers.includes(boleto.number)) className += 'seleccionado';
+        else className += boleto.status;
         cell.className = className;
         cell.textContent = boleto.number;
         cell.addEventListener('click', () => showNumberDetail(boleto));
@@ -306,9 +301,7 @@ function showNumberDetail(boleto) {
     const isAvailable = boleto.status === 'disponible';
 
     let contenidoHtml = '<p><em>Sin contenido adicional</em></p>';
-    if (boleto.contenido) {
-        contenidoHtml = `<p><strong>Contenido:</strong> ${escapeHtml(boleto.contenido)}</p>`;
-    }
+    if (boleto.contenido) contenidoHtml = `<p><strong>Contenido:</strong> ${escapeHtml(boleto.contenido)}</p>`;
 
     infoDiv.innerHTML = `
         <p><strong>Número:</strong> ${boleto.number}</p>
@@ -340,13 +333,10 @@ function showNumberDetail(boleto) {
 
 function toggleNumberSelection(number) {
     const index = selectedNumbers.indexOf(number);
-    if (index > -1) {
-        selectedNumbers.splice(index, 1);
-    } else {
+    if (index > -1) selectedNumbers.splice(index, 1);
+    else {
         const boleto = (window.currentBoletos || []).find(b => b.number === number);
-        if (boleto && boleto.status === 'disponible') {
-            selectedNumbers.push(number);
-        }
+        if (boleto && boleto.status === 'disponible') selectedNumbers.push(number);
     }
     updateStats();
     renderPublicGrid(getElement('publicSearch').value);
@@ -395,9 +385,7 @@ function calcularTotal() {
         const boleto = boletos.find(b => b.number === num);
         if (boleto) {
             const price = Number(boleto.price);
-            if (!isNaN(price)) {
-                total += price;
-            }
+            if (!isNaN(price)) total += price;
         }
     });
     return total.toFixed(2);
@@ -411,7 +399,6 @@ async function confirmPurchase() {
         return;
     }
 
-    // Abrir WhatsApp inmediatamente
     const rifaActual = rifas.find(r => r.id === currentRifaId);
     const mensajeAdmin = [
         '🔔 *Nueva reserva recibida*',
@@ -433,7 +420,6 @@ async function confirmPurchase() {
                 phone: clientPhone
             })
         });
-
         showToast('✅ ¡Números reservados exitosamente!', 'success');
         clearCart();
         closeModal('checkoutModal');
@@ -592,18 +578,18 @@ function openEditBoleto(boleto) {
     getElement('editDate').value = boleto.sale_date || '';
     getElement('editPrice').value = boleto.price || '';
     getElement('editContent').value = boleto.contenido || '';
-    
+
     const modalContent = document.querySelector('#editModal .modal-content');
     const oldBtn = document.getElementById('whatsappConfirmBtn');
     if (oldBtn) oldBtn.remove();
-    
+
     const whatsappBtn = document.createElement('button');
     whatsappBtn.id = 'whatsappConfirmBtn';
     whatsappBtn.className = 'btn btn-success btn-block';
     whatsappBtn.textContent = '📲 Enviar confirmación de pago por WhatsApp';
     whatsappBtn.onclick = () => sendPaymentConfirmation(boleto.phone, boleto.number, rifaName);
     modalContent.appendChild(whatsappBtn);
-    
+
     getElement('editModal').classList.add('active');
 }
 
@@ -619,10 +605,7 @@ async function saveEdit() {
         contenido: getElement('editContent').value.trim()
     };
     try {
-        await apiFetch(`/api/boletos/${selectedBoletoForEdit.id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data)
-        });
+        await apiFetch(`/api/boletos/${selectedBoletoForEdit.id}`, { method: 'PUT', body: JSON.stringify(data) });
         closeModal('editModal');
         selectedBoletoForEdit = null;
         await refreshAdminUI();
@@ -635,32 +618,16 @@ async function saveEdit() {
 async function quickToggleBoleto(boleto) {
     let newStatus;
     let saleDate = boleto.sale_date;
-    if (boleto.status === 'disponible') {
-        newStatus = 'vendido';
-        saleDate = new Date().toISOString().split('T')[0];
-    } else if (boleto.status === 'vendido') {
-        newStatus = 'reservado';
-        saleDate = null;
-    } else {
-        newStatus = 'disponible';
-        saleDate = null;
-    }
+    if (boleto.status === 'disponible') { newStatus = 'vendido'; saleDate = new Date().toISOString().split('T')[0]; }
+    else if (boleto.status === 'vendido') { newStatus = 'reservado'; saleDate = null; }
+    else { newStatus = 'disponible'; saleDate = null; }
     try {
         await apiFetch(`/api/boletos/${boleto.id}`, {
             method: 'PUT',
-            body: JSON.stringify({
-                status: newStatus,
-                buyer_name: boleto.buyer_name,
-                phone: boleto.phone,
-                sale_date: saleDate,
-                price: boleto.price,
-                contenido: boleto.contenido
-            })
+            body: JSON.stringify({ status: newStatus, buyer_name: boleto.buyer_name, phone: boleto.phone, sale_date: saleDate, price: boleto.price, contenido: boleto.contenido })
         });
         await refreshAdminUI();
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
 }
 
 // ============ ADMIN: RIFAS (CRUD) ============
@@ -683,6 +650,8 @@ function renderRifasEditList() {
                 <div class="rifa-edit-details">
                     Precio: $${rifa.price} | Boletos: ${rifa.total_boletos} | 
                     Fecha: ${new Date(rifa.date).toLocaleString()}
+                    ${rifa.stream_url ? ' | 🔴 Transmisión configurada' : ''}
+                    ${rifa.ganador_boleto_id ? ' | 🏆 Ganador definido' : ''}
                 </div>
             </div>
             <div class="rifa-edit-actions">
@@ -701,6 +670,7 @@ function showCreateRifa() {
     getElement('editRifaDescription').value = '';
     getElement('editRifaBadge').value = '';
     getElement('editRifaDate').value = '';
+    getElement('editRifaStreamUrl').value = '';
     getElement('editRifaTotal').value = 100;
     getElement('editRifaPrice').value = 10;
     getElement('rifaImagePreview').innerHTML = '';
@@ -718,18 +688,19 @@ function editRifa(id) {
     getElement('editRifaDescription').value = rifa.description || '';
     getElement('editRifaBadge').value = rifa.badge || '';
     getElement('editRifaDate').value = rifa.date;
+    getElement('editRifaStreamUrl').value = rifa.stream_url || '';
     getElement('editRifaTotal').value = rifa.total_boletos;
     getElement('editRifaPrice').value = rifa.price;
     getElement('rifaImagePreview').innerHTML = `<img src="${rifa.image_url || PLACEHOLDER_IMAGE}" class="rifa-image-preview">`;
     getElement('editRifaImage').value = '';
     closeModal('editRifasModal');
     getElement('editSingleRifaModal').classList.add('active');
-    
+
     // Agregar botón de sorteo
     const modalContent = document.querySelector('#editSingleRifaModal .modal-content');
     const oldBtn = document.getElementById('setGanadorBtn');
     if (oldBtn) oldBtn.remove();
-    
+
     const ganadorBtn = document.createElement('button');
     ganadorBtn.id = 'setGanadorBtn';
     ganadorBtn.className = 'btn btn-warning btn-block';
@@ -785,9 +756,10 @@ async function saveSingleRifa() {
     const description = getElement('editRifaDescription').value.trim();
     const badge = getElement('editRifaBadge').value.trim();
     const date = getElement('editRifaDate').value;
+    const stream_url = getElement('editRifaStreamUrl').value.trim();
     const total = parseInt(getElement('editRifaTotal').value);
     const price = parseFloat(getElement('editRifaPrice').value);
-    
+
     if (!name || !date || !total || !price) {
         showToast('Por favor completa todos los campos', 'warning');
         return;
@@ -796,7 +768,7 @@ async function saveSingleRifa() {
         showToast('La fecha debe ser futura', 'warning');
         return;
     }
-    
+
     let image_url = null;
     const fileInput = getElement('editRifaImage');
     if (fileInput.files.length > 0) {
@@ -804,8 +776,8 @@ async function saveSingleRifa() {
     } else if (id) {
         image_url = rifas.find(r => r.id == id)?.image_url || null;
     }
-    
-    const data = { name, description, price, total_boletos: total, image_url, badge, date };
+
+    const data = { name, description, price, total_boletos: total, image_url, badge, date, stream_url };
     try {
         if (id) {
             await apiFetch(`/api/rifas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
@@ -822,18 +794,14 @@ async function saveSingleRifa() {
 }
 
 async function deleteRifa(id) {
-    if (!confirm('¿Estás seguro de eliminar esta rifa? Se borrarán también todos sus boletos.')) {
-        return;
-    }
+    if (!confirm('¿Estás seguro de eliminar esta rifa? Se borrarán también todos sus boletos.')) return;
     try {
         await apiFetch(`/api/rifas/${id}`, { method: 'DELETE' });
         closeModal('editRifasModal');
         await refreshAdminUI();
         await loadPublicData();
         showToast('✅ Rifa eliminada correctamente', 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
 }
 
 // ============ ADMIN: BANNERS ============
@@ -880,45 +848,29 @@ async function addBanner() {
     const title = getElement('bannerTitle').value.trim();
     const fileInput = getElement('bannerImage');
     const link = getElement('bannerLink').value.trim();
-    if (!fileInput.files[0]) {
-        showToast('Selecciona una imagen', 'warning');
-        return;
-    }
+    if (!fileInput.files[0]) { showToast('Selecciona una imagen', 'warning'); return; }
 
     try {
         const image_url = await uploadImage(fileInput.files[0]);
-
-        await apiFetch('/api/banners', {
-            method: 'POST',
-            body: JSON.stringify({ title, image_url, link, active: true })
-        });
-
+        await apiFetch('/api/banners', { method: 'POST', body: JSON.stringify({ title, image_url, link, active: true }) });
         getElement('bannerTitle').value = '';
         getElement('bannerLink').value = '';
         getElement('bannerImage').value = '';
         getElement('bannerPreview').style.display = 'none';
-
         closeModal('bannerModal');
         await refreshAdminUI();
         showToast('✅ Banner agregado', 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
 }
 
 async function toggleBanner(id) {
     const banner = banners.find(b => b.id === id);
     if (!banner) return;
     try {
-        await apiFetch(`/api/banners/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ ...banner, active: !banner.active })
-        });
+        await apiFetch(`/api/banners/${id}`, { method: 'PUT', body: JSON.stringify({ ...banner, active: !banner.active }) });
         closeModal('bannerModal');
         await refreshAdminUI();
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
 }
 
 async function deleteBanner(id) {
@@ -927,9 +879,7 @@ async function deleteBanner(id) {
             await apiFetch(`/api/banners/${id}`, { method: 'DELETE' });
             closeModal('bannerModal');
             await refreshAdminUI();
-        } catch (err) {
-            showToast(err.message, 'error');
-        }
+        } catch (err) { showToast(err.message, 'error'); }
     }
 }
 
@@ -971,39 +921,27 @@ function showReport() {
 }
 
 // ============ FUNCIONES DE MODALES LEGALES ============
-function openTermsModal() {
-    getElement('termsModal').classList.add('active');
-}
-
-function openPrivacyModal() {
-    getElement('privacyModal').classList.add('active');
-}
+function openTermsModal() { getElement('termsModal').classList.add('active'); }
+function openPrivacyModal() { getElement('privacyModal').classList.add('active'); }
 
 // ============ EVENTOS ============
 document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-            e.preventDefault();
-            showLogin();
-        }
+        if (e.ctrlKey && e.shiftKey && e.key === 'A') { e.preventDefault(); showLogin(); }
     });
-    
+
     getElement('publicSearch').addEventListener('input', (e) => renderPublicGrid(e.target.value));
     getElement('adminSearch').addEventListener('input', (e) => renderAdminGrid(e.target.value));
     getElement('adminRifaFilter').addEventListener('change', () => renderAdminGrid());
-    
+
     window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            e.target.classList.remove('active');
-        }
+        if (e.target.classList.contains('modal')) e.target.classList.remove('active');
     });
-    
+
     loadPublicData();
     startCountdown();
-    
-    if (authToken) {
-        isAdmin = true;
-    }
+
+    if (authToken) isAdmin = true;
 });
 
 function closeModal(modalId) {
