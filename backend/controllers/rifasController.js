@@ -39,7 +39,7 @@ exports.getOne = async (req, res) => {
 exports.create = async (req, res) => {
   const client = await pool.connect();
   try {
-    const { name, description, price, total_boletos, image_url, badge, date, stream_url } = req.body;
+    const { name, description, price, total_boletos, image_url, badge, date, stream_url, stream_duration } = req.body;
     if (!name || !price || !total_boletos || !date) {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
@@ -47,10 +47,10 @@ exports.create = async (req, res) => {
     await client.query('BEGIN');
 
     const rifaResult = await client.query(
-      `INSERT INTO rifas (name, description, price, total_boletos, image_url, badge, date, stream_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO rifas (name, description, price, total_boletos, image_url, badge, date, stream_url, stream_duration)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [name, description, price, total_boletos, image_url, badge, date, stream_url]
+      [name, description, price, total_boletos, image_url, badge, date, stream_url, stream_duration || 60]
     );
 
     const rifaId = rifaResult.rows[0].id;
@@ -79,14 +79,14 @@ exports.update = async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { name, description, price, total_boletos, image_url, badge, date, stream_url } = req.body;
+    const { name, description, price, total_boletos, image_url, badge, date, stream_url, stream_duration } = req.body;
 
     await client.query('BEGIN');
 
     await client.query(
       `UPDATE rifas SET name=$1, description=$2, price=$3, total_boletos=$4,
-       image_url=$5, badge=$6, date=$7, stream_url=$8 WHERE id=$9`,
-      [name, description, price, total_boletos, image_url, badge, date, stream_url, id]
+       image_url=$5, badge=$6, date=$7, stream_url=$8, stream_duration=$9 WHERE id=$10`,
+      [name, description, price, total_boletos, image_url, badge, date, stream_url, stream_duration || 60, id]
     );
 
     await client.query('UPDATE boletos SET price = $1 WHERE rifa_id = $2', [price, id]);

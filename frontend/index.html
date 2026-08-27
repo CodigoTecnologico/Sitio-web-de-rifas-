@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Modal de Login -->
+    <!-- Login -->
     <div id="loginModal" class="login-modal">
         <div class="login-content">
             <h2>🔐 Acceso Administrativo</h2>
@@ -17,70 +17,55 @@
             <button class="btn btn-secondary btn-block" onclick="closeLogin()">Cancelar</button>
         </div>
     </div>
-    
+
     <div class="container">
-        <!-- Banner Principal -->
+        <!-- Banner -->
         <div class="header-banner" id="headerBanner">
             <div class="banner-overlay">
                 <div class="banner-title">🎰 LOTERÍA PREMIUM</div>
                 <div class="banner-subtitle">¡Tu oportunidad de ganar!</div>
             </div>
         </div>
-        
-        <!-- Navegación -->
+
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchView('public')">
-                <span>🎫</span> Comprar Números
-            </button>
+            <button class="nav-tab active" onclick="switchView('public')">🎫 Comprar Números</button>
         </div>
-        
-        <!-- Acceso administrativo discreto -->
         <div class="admin-access" onclick="showLogin()" title="Acceso administrativo">⚙</div>
-        
-        <!-- Vista Pública -->
+
+        <!-- Vista pública -->
         <div class="public-view active" id="publicView">
             <h1>🎲 Rifas Disponibles</h1>
             <p class="subtitle">Elige tu rifa favorita y selecciona tus números de la suerte</p>
-            
             <div class="rifas-showcase" id="rifasShowcase"></div>
-            
-            <div class="numbers-section" id="numbersSection" style="display: none;">
+
+            <div class="numbers-section" id="numbersSection" style="display:none;">
                 <div class="numbers-header">
                     <button class="btn btn-secondary" onclick="goBackToRifas()">← Volver a Rifas</button>
                     <h2 class="section-title" id="selectedRifaTitle">Selecciona tus Números</h2>
-                    <div style="width: 120px;"></div>
+                    <div style="width:120px;"></div>
                 </div>
-                
                 <div class="instructions">
-                    <p>👆 <strong>Haz clic</strong> en un número para ver su detalle y seleccionarlo</p>
-                    <p>🔵 Los números <span class="badge-seleccionado">azules</span> están seleccionados</p>
-                    <p>🛒 Cuando termines, haz clic en el botón "Comprar Números"</p>
+                    <p>👆 Haz clic en los números verdes para seleccionarlos</p>
+                    <p>🔵 Los números azules están seleccionados</p>
+                    <p>🛒 Cuando termines, haz clic en "Comprar Números"</p>
                 </div>
-                
                 <div class="controls">
-                    <div class="search-box">
-                        <input type="text" id="publicSearch" placeholder="🔍 Buscar número específico...">
-                    </div>
+                    <div class="search-box"><input type="text" id="publicSearch" placeholder="🔍 Buscar número..."></div>
                     <div class="stats">
                         <div class="stat-card disponible">Disponibles: <span id="publicAvailable">0</span></div>
                         <div class="stat-card seleccionado-card">Seleccionados: <span id="selectedCount">0</span></div>
                     </div>
                 </div>
-                
                 <div class="grid-container" id="publicGrid"></div>
-                
                 <div class="buy-button-container">
-                    <button class="btn btn-success btn-large" onclick="showCheckout()">
-                        🛒 Comprar Números Seleccionados (<span id="buyButtonCount">0</span>)
-                    </button>
+                    <button class="btn btn-success btn-large" onclick="showCheckout()">🛒 Comprar Números Seleccionados (<span id="buyButtonCount">0</span>)</button>
                 </div>
             </div>
         </div>
-        
-        <!-- Vista Admin -->
+
+        <!-- Vista admin -->
         <div class="admin-view" id="adminView">
             <h1>⚙️ Panel de Administración</h1>
-            
             <div class="admin-info">
                 <h3>📊 Información General</h3>
                 <div class="admin-stats">
@@ -91,54 +76,43 @@
                     <span>Ingresos: <span id="totalRevenue">$0</span></span>
                 </div>
             </div>
-            
             <div class="controls">
                 <select id="adminRifaFilter" class="rifa-filter" onchange="renderAdminGrid()">
                     <option value="all">Todas las rifas</option>
                 </select>
-                <div class="search-box">
-                    <input type="text" id="adminSearch" placeholder="🔍 Buscar número o comprador...">
-                </div>
+                <div class="search-box"><input type="text" id="adminSearch" placeholder="🔍 Buscar..."></div>
             </div>
-            
             <div class="actions-bar">
                 <button class="btn btn-warning" onclick="showEditRifas()">🎯 Editar Rifas</button>
                 <button class="btn btn-info" onclick="showBannerManagement()">🖼️ Gestionar Banners</button>
                 <button class="btn btn-success" onclick="showReport()">📊 Ver Reporte</button>
                 <button class="btn btn-secondary" onclick="logout()">🚪 Salir</button>
             </div>
-            
             <div id="adminGrid"></div>
         </div>
     </div>
-    
-    <!-- Carrito de Compras -->
-    <div class="cart-summary" id="cartSummary" onclick="showCheckout()" style="display: none;">
+
+    <!-- Carrito -->
+    <div class="cart-summary" id="cartSummary" onclick="showCheckout()" style="display:none;">
         <span class="cart-icon">🛒</span>
         <div class="cart-count" id="cartCount">0</div>
         <span>Ver selección</span>
     </div>
-    
-    <!-- Modal de Checkout -->
+
+    <!-- Checkout -->
     <div id="checkoutModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('checkoutModal')">&times;</span>
             <h2>🛒 Tu Selección</h2>
             <div id="selectedNumbersList"></div>
-            <div class="form-group">
-                <label for="clientName">Tu nombre completo:</label>
-                <input type="text" id="clientName" placeholder="Ej: Juan Pérez">
-            </div>
-            <div class="form-group">
-                <label for="clientPhone">Teléfono de contacto:</label>
-                <input type="tel" id="clientPhone" placeholder="Ej: 555-123-4567">
-            </div>
+            <div class="form-group"><label>Tu nombre completo:</label><input type="text" id="clientName" placeholder="Ej: Juan Pérez"></div>
+            <div class="form-group"><label>Teléfono de contacto:</label><input type="tel" id="clientPhone" placeholder="Ej: 555-123-4567"></div>
             <button class="btn btn-primary btn-block" onclick="confirmPurchase()">✅ Confirmar Selección</button>
             <button class="btn btn-danger btn-block" onclick="clearCart()">🗑️ Vaciar Selección</button>
         </div>
     </div>
-    
-    <!-- Modal de detalle de número -->
+
+    <!-- Modal detalle número -->
     <div id="numberDetailModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('numberDetailModal')">&times;</span>
@@ -147,50 +121,25 @@
             <div id="numberDetailActions"></div>
         </div>
     </div>
-    
-    <!-- Modal para editar número (admin) -->
+
+    <!-- Modal editar boleto -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('editModal')">&times;</span>
             <h2 id="modalTitle">Editar Número</h2>
-            <div class="form-group">
-                <label for="editNumber">Número:</label>
-                <input type="number" id="editNumber" disabled>
-            </div>
-            <div class="form-group">
-                <label for="editStatus">Estado:</label>
-                <select id="editStatus">
-                    <option value="disponible">Disponible</option>
-                    <option value="vendido">Vendido</option>
-                    <option value="reservado">Reservado</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="editBuyer">Comprador:</label>
-                <input type="text" id="editBuyer" placeholder="Nombre del comprador">
-            </div>
-            <div class="form-group">
-                <label for="editPhone">Teléfono:</label>
-                <input type="text" id="editPhone" placeholder="Teléfono del comprador">
-            </div>
-            <div class="form-group">
-                <label for="editDate">Fecha de venta:</label>
-                <input type="date" id="editDate">
-            </div>
-            <div class="form-group">
-                <label for="editPrice">Precio:</label>
-                <input type="number" id="editPrice" placeholder="Precio de venta">
-            </div>
-            <div class="form-group">
-                <label for="editContent">Contenido del boleto (palabras clave):</label>
-                <textarea id="editContent" rows="3" placeholder="Ej: Equipo Azul, Número 7, Final Champions"></textarea>
-            </div>
+            <div class="form-group"><label>Número:</label><input type="number" id="editNumber" disabled></div>
+            <div class="form-group"><label>Estado:</label><select id="editStatus"><option value="disponible">Disponible</option><option value="vendido">Vendido</option><option value="reservado">Reservado</option></select></div>
+            <div class="form-group"><label>Comprador:</label><input type="text" id="editBuyer"></div>
+            <div class="form-group"><label>Teléfono:</label><input type="text" id="editPhone"></div>
+            <div class="form-group"><label>Fecha de venta:</label><input type="date" id="editDate"></div>
+            <div class="form-group"><label>Precio:</label><input type="number" id="editPrice"></div>
+            <div class="form-group"><label>Contenido:</label><textarea id="editContent" rows="2"></textarea></div>
             <button class="btn btn-primary" onclick="saveEdit()">💾 Guardar</button>
             <button class="btn btn-danger" onclick="closeModal('editModal')">Cancelar</button>
         </div>
     </div>
-    
-    <!-- Modal para editar rifas -->
+
+    <!-- Modal editar rifas -->
     <div id="editRifasModal" class="modal">
         <div class="modal-content modal-large">
             <span class="close-modal" onclick="closeModal('editRifasModal')">&times;</span>
@@ -199,161 +148,74 @@
             <button class="btn btn-primary btn-block" onclick="showCreateRifa()">➕ Nueva Rifa</button>
         </div>
     </div>
-    
-    <!-- Modal para editar/crear una rifa -->
+
+    <!-- Modal crear/editar rifa -->
     <div id="editSingleRifaModal" class="modal">
         <div class="modal-content modal-large">
             <span class="close-modal" onclick="closeModal('editSingleRifaModal')">&times;</span>
             <h2 id="editSingleRifaTitle">Editar Rifa</h2>
             <input type="hidden" id="editRifaId">
-            <div class="form-group">
-                <label for="editRifaName">Nombre de la rifa:</label>
-                <input type="text" id="editRifaName" placeholder="Nombre de la rifa">
-            </div>
-            <div class="form-group">
-                <label for="editRifaDescription">Descripción:</label>
-                <textarea id="editRifaDescription" rows="3" placeholder="Descripción de la rifa"></textarea>
-            </div>
-            <div class="form-group">
-                <label for="editRifaImage">Imagen de la rifa:</label>
-                <input type="file" id="editRifaImage" accept="image/*" onchange="previewRifaImage()">
-                <div id="rifaImagePreview" style="margin-top: 10px;"></div>
-            </div>
-            <div class="form-group">
-                <label for="editRifaBadge">Etiqueta (badge):</label>
-                <input type="text" id="editRifaBadge" placeholder="Ej: 🔥 Premium">
-            </div>
-            <div class="form-group">
-                <label for="editRifaDate">Fecha de vigencia (sorteo):</label>
-                <input type="datetime-local" id="editRifaDate">
-            </div>
-            <div class="form-group">
-                <label for="editRifaStreamUrl">Enlace de transmisión (opcional):</label>
-                <input type="url" id="editRifaStreamUrl" placeholder="https://...">
-            </div>
-            <div class="form-group">
-                <label for="editRifaTotal">Cantidad de boletos:</label>
-                <input type="number" id="editRifaTotal" min="1" max="1000" value="100">
-            </div>
-            <div class="form-group">
-                <label for="editRifaPrice">Precio por boleto:</label>
-                <input type="number" id="editRifaPrice" min="0" step="0.01" value="10">
-            </div>
+            <div class="form-group"><label>Nombre:</label><input type="text" id="editRifaName"></div>
+            <div class="form-group"><label>Descripción:</label><textarea id="editRifaDescription" rows="3"></textarea></div>
+            <div class="form-group"><label>Imagen:</label><input type="file" id="editRifaImage" accept="image/*" onchange="previewRifaImage()"><div id="rifaImagePreview"></div></div>
+            <div class="form-group"><label>Etiqueta:</label><input type="text" id="editRifaBadge"></div>
+            <div class="form-group"><label>Fecha del sorteo:</label><input type="datetime-local" id="editRifaDate"></div>
+            <div class="form-group"><label>Enlace de transmisión (opcional):</label><input type="url" id="editRifaStreamUrl" placeholder="https://..."></div>
+            <div class="form-group"><label>Duración de la transmisión (minutos):</label><input type="number" id="editRifaStreamDuration" min="1" value="60"></div>
+            <div class="form-group"><label>Cantidad de boletos:</label><input type="number" id="editRifaTotal" min="1" value="100"></div>
+            <div class="form-group"><label>Precio:</label><input type="number" id="editRifaPrice" step="0.01" value="10"></div>
             <button class="btn btn-primary" onclick="saveSingleRifa()">💾 Guardar Rifa</button>
             <button class="btn btn-danger" onclick="closeModal('editSingleRifaModal')">Cancelar</button>
         </div>
     </div>
-    
-    <!-- Modal para gestión de banners -->
+
+    <!-- Modal banners -->
     <div id="bannerModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('bannerModal')">&times;</span>
-            <h2>🖼️ Gestión de Banners Publicitarios</h2>
-            <div class="form-group">
-                <label for="bannerTitle">Título del banner:</label>
-                <input type="text" id="bannerTitle" placeholder="Título del banner">
-            </div>
-            <div class="form-group">
-                <label for="bannerImage">Imagen del banner:</label>
-                <input type="file" id="bannerImage" accept="image/*" onchange="previewBannerImage()">
-            </div>
-            <div class="form-group">
-                <label>Vista previa:</label>
-                <img id="bannerPreview" src="" style="width: 100%; height: 150px; object-fit: cover; display: none;">
-            </div>
-            <div class="form-group">
-                <label for="bannerLink">Enlace (opcional):</label>
-                <input type="url" id="bannerLink" placeholder="https://ejemplo.com">
-            </div>
+            <h2>🖼️ Gestión de Banners</h2>
+            <div class="form-group"><label>Título:</label><input type="text" id="bannerTitle"></div>
+            <div class="form-group"><label>Imagen:</label><input type="file" id="bannerImage" accept="image/*" onchange="previewBannerImage()"><img id="bannerPreview" style="display:none;width:100%;height:150px;object-fit:cover;"></div>
+            <div class="form-group"><label>Enlace:</label><input type="url" id="bannerLink"></div>
             <button class="btn btn-primary" onclick="addBanner()">➕ Agregar Banner</button>
             <hr>
             <h3>Banners actuales:</h3>
             <div id="bannerList"></div>
         </div>
     </div>
-    
-    <!-- Modal para reporte -->
+
+    <!-- Modal reporte -->
     <div id="reportModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('reportModal')">&times;</span>
             <h2>📊 Reporte de Ventas</h2>
             <div class="responsive-table">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Número</th>
-                            <th>Comprador</th>
-                            <th>Teléfono</th>
-                            <th>Fecha</th>
-                            <th>Precio</th>
-                            <th>Estado</th>
-                            <th>Contenido</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Número</th><th>Comprador</th><th>Teléfono</th><th>Fecha</th><th>Precio</th><th>Estado</th><th>Contenido</th><th>Acciones</th></tr></thead>
                     <tbody id="reportTable"></tbody>
                 </table>
             </div>
             <button class="btn btn-secondary" onclick="closeModal('reportModal')">Cerrar</button>
         </div>
     </div>
-    
+
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-section">
-                <h4>Lotería Premium</h4>
-                <p>Tu oportunidad de ganar grandes premios.</p>
-            </div>
-            <div class="footer-section">
-                <h4>Enlaces legales</h4>
-                <ul>
-                    <li><a href="#" onclick="openTermsModal()">Términos y Condiciones</a></li>
-                    <li><a href="#" onclick="openPrivacyModal()">Política de Privacidad</a></li>
-                    <li><a href="mailto:contacto@loteriapremium.com">Contacto</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Síguenos</h4>
-                <div class="social-icons">
-                    <a href="#" aria-label="Facebook">📘</a>
-                    <a href="#" aria-label="Instagram">📸</a>
-                    <a href="#" aria-label="WhatsApp">💬</a>
-                </div>
-            </div>
+            <div class="footer-section"><h4>Lotería Premium</h4><p>Tu oportunidad de ganar grandes premios.</p></div>
+            <div class="footer-section"><h4>Enlaces legales</h4><ul><li><a href="#" onclick="openTermsModal()">Términos y Condiciones</a></li><li><a href="#" onclick="openPrivacyModal()">Política de Privacidad</a></li><li><a href="mailto:contacto@loteriapremium.com">Contacto</a></li></ul></div>
+            <div class="footer-section"><h4>Síguenos</h4><div class="social-icons"><a href="#">📘</a><a href="#">📸</a><a href="#">💬</a></div></div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 "nombre de la web". Todos los derechos reservados.</p>
-        </div>
+        <div class="footer-bottom"><p>&copy; 2025 Lotería Premium. Todos los derechos reservados.</p></div>
     </footer>
 
-    <!-- Modales de texto legal -->
-    <div id="termsModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal('termsModal')">&times;</span>
-            <h2>📜 Términos y Condiciones</h2>
-            <div class="legal-text">
-                <p>1. Los boletos son personales e intransferibles.</p>
-                <p>2. El pago debe realizarse antes de la fecha del sorteo.</p>
-                <p>3. Los premios no son canjeables por dinero en efectivo.</p>
-                <p>4. La organización se reserva el derecho de modificar las bases.</p>
-            </div>
-            <button class="btn btn-secondary" onclick="closeModal('termsModal')">Cerrar</button>
-        </div>
-    </div>
+    <!-- Modales legales -->
+    <div id="termsModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('termsModal')">&times;</span><h2>📜 Términos y Condiciones</h2><div class="legal-text"><p>1. Los boletos son personales e intransferibles.</p><p>2. El pago debe realizarse antes de la fecha del sorteo.</p><p>3. Los premios no son canjeables por dinero en efectivo.</p></div><button class="btn btn-secondary" onclick="closeModal('termsModal')">Cerrar</button></div></div>
+    <div id="privacyModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('privacyModal')">&times;</span><h2>🔒 Política de Privacidad</h2><div class="legal-text"><p>1. Recopilamos datos de contacto solo para la gestión de los boletos.</p><p>2. No compartimos tu información con terceros.</p><p>3. Puedes solicitar la eliminación de tus datos en cualquier momento.</p></div><button class="btn btn-secondary" onclick="closeModal('privacyModal')">Cerrar</button></div></div>
 
-    <div id="privacyModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal('privacyModal')">&times;</span>
-            <h2>🔒 Política de Privacidad</h2>
-            <div class="legal-text">
-                <p>1. Recopilamos datos de contacto solo para la gestión de los boletos.</p>
-                <p>2. No compartimos tu información con terceros.</p>
-                <p>3. Puedes solicitar la eliminación de tus datos en cualquier momento.</p>
-            </div>
-            <button class="btn btn-secondary" onclick="closeModal('privacyModal')">Cerrar</button>
-        </div>
-    </div>
+    <!-- Toasts -->
     <div id="toastContainer" class="toast-container"></div>
+
     <script src="script.js"></script>
 </body>
 </html>

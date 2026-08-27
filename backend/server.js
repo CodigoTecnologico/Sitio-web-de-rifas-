@@ -39,10 +39,8 @@ app.use(express.json({ limit: '10mb' }));
 // Rate limiting
 const generalLimiter = rateLimit({ windowMs: 15*60*1000, max: 300 });
 app.use('/api/', generalLimiter);
-
 const loginLimiter = rateLimit({ windowMs: 15*60*1000, max: 10 });
 app.use('/api/auth/login', loginLimiter);
-
 const reserveLimiter = rateLimit({ windowMs: 60*1000, max: 20 });
 app.use('/api/boletos/reserve', reserveLimiter);
 
@@ -100,6 +98,7 @@ async function initializeDatabase() {
       badge VARCHAR(50),
       date TIMESTAMP NOT NULL,
       stream_url TEXT,
+      stream_duration INTEGER DEFAULT 60,
       numero_ganador VARCHAR(50),
       ganador_boleto_id INTEGER,
       created_at TIMESTAMP DEFAULT NOW()
@@ -134,6 +133,7 @@ async function initializeDatabase() {
 
     await pool.query('ALTER TABLE boletos ADD COLUMN IF NOT EXISTS price NUMERIC(10,2)');
     await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS stream_url TEXT');
+    await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS stream_duration INTEGER DEFAULT 60');
     await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS numero_ganador VARCHAR(50)');
     await pool.query('ALTER TABLE rifas ADD COLUMN IF NOT EXISTS ganador_boleto_id INTEGER');
     console.log('✅ Columnas verificadas');

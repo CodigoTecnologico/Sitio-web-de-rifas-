@@ -18,7 +18,8 @@ router.post('/', auth, [
   body('price').isNumeric(),
   body('total_boletos').isInt({ min: 1 }),
   body('date').isISO8601(),
-  body('stream_url').optional({ values: 'falsy' }).isURL()
+  body('stream_url').optional({ values: 'falsy' }).isURL(),
+  body('stream_duration').optional({ values: 'falsy' }).isInt({ min: 1 })
 ], validate, rifasController.create);
 
 router.put('/:id', auth, [
@@ -27,7 +28,8 @@ router.put('/:id', auth, [
   body('price').isNumeric(),
   body('total_boletos').isInt({ min: 1 }),
   body('date').isISO8601(),
-  body('stream_url').optional({ values: 'falsy' }).isURL()
+  body('stream_url').optional({ values: 'falsy' }).isURL(),
+  body('stream_duration').optional({ values: 'falsy' }).isInt({ min: 1 })
 ], validate, rifasController.update);
 
 router.delete('/:id', auth, param('id').isInt(), validate, rifasController.delete);
